@@ -1,0 +1,82 @@
+{
+  "app": {
+    "title": "TinyVid",
+    "subtitle": "Video Batch Compression"
+  },
+  "dropzone": {
+    "title": "Drop videos here",
+    "subtitle": "or click to browse files",
+    "dragging": "Release to add videos",
+    "browse": "Browse Files",
+    "browseFolder": "Browse Folder"
+  },
+  "fileList": {
+    "name": "Name",
+    "resolution": "Resolution",
+    "duration": "Duration",
+    "size": "Size",
+    "codec": "Codec",
+    "empty": "No videos imported",
+    "remove": "Remove",
+    "clearAll": "Clear All"
+  },
+  "settings": {
+    "title": "Settings",
+    "codec": "Codec",
+    "quality": "Quality (CRF)",
+    "qualityHint": {
+      "low": "Smaller file",
+      "high": "Higher quality"
+    },
+    "resolution": {
+      "title": "Resolution",
+      "original": "Original"
+    },
+    "audio": {
+      "title": "Audio Bitrate",
+      "copy": "Copy (no re-encode)"
+    },
+    "hardware": {
+      "title": "Hardware Acceleration",
+      "detected": "Detected: {{encoder}}",
+      "none": "No hardware encoder detected"
+    }
+  },
+  "task": {
+    "start": "Start Compression",
+    "cancelAll": "Cancel All",
+    "clearCompleted": "Clear Completed",
+    "status": {
+      "pending": "Pending",
+      "running": "Compressing",
+      "paused": "Paused",
+      "completed": "Completed",
+      "failed": "Failed",
+      "cancelled": "Cancelled"
+    },
+    "eta": "ETA: {{time}}",
+    "speed": "{{speed}}x",
+    "noTasks": "No tasks in queue"
+  },
+  "comparison": {
+    "title": "Compression Results",
+    "original": "Original",
+    "compressed": "Compressed",
+    "saved": "Saved",
+    "ratio": "Compression Ratio"
+  },
+  "theme": {
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "language": {
+    "en": "English",
+    "zh": "中文"
+  },
+  "error": {
+    "ffmpegNotFound": "FFmpeg not found. Please install FFmpeg.",
+    "noVideos": "No videos to compress",
+    "compressionFailed": "Compression failed: {{error}}"
+  }
+}
