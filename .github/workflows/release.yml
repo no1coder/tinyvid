@@ -55,22 +55,19 @@ jobs:
         run: pnpm install
 
       # Download platform-specific ffmpeg/ffprobe binaries
-      - name: Download FFmpeg (macOS arm64)
-        if: matrix.target == 'aarch64-apple-darwin'
+      - name: Download FFmpeg (macOS)
+        if: runner.os == 'macOS'
         run: |
-          # Assumes binaries are already in src-tauri/binaries/ for macOS arm64
-          # For CI, you may need to download them here
+          gh release download ffmpeg-binaries --pattern 'ffmpeg-macos-arm64.tar.gz' --dir /tmp
+          tar xzf /tmp/ffmpeg-macos-arm64.tar.gz -C src-tauri/
+          # Rename binaries to match the current build target
+          if [ "${{ matrix.target }}" = "x86_64-apple-darwin" ]; then
+            mv src-tauri/binaries/ffmpeg-aarch64-apple-darwin src-tauri/binaries/ffmpeg-x86_64-apple-darwin
+            mv src-tauri/binaries/ffprobe-aarch64-apple-darwin src-tauri/binaries/ffprobe-x86_64-apple-darwin
+          fi
           ls -la src-tauri/binaries/
-
-      - name: Download FFmpeg (macOS x86_64)
-        if: matrix.target == 'x86_64-apple-darwin'
-        run: |
-          # Download x86_64 ffmpeg binaries
-          # Replace with actual download URLs for your project
-          echo "Note: x86_64 ffmpeg binaries need to be provided"
-          # Rename existing binaries for cross-compilation target
-          cp src-tauri/binaries/ffmpeg-aarch64-apple-darwin src-tauri/binaries/ffmpeg-x86_64-apple-darwin || true
-          cp src-tauri/binaries/ffprobe-aarch64-apple-darwin src-tauri/binaries/ffprobe-x86_64-apple-darwin || true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Download FFmpeg (Windows)
         if: matrix.target == 'x86_64-pc-windows-msvc'
