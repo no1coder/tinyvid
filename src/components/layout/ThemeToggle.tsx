@@ -1,31 +1,25 @@
-import { Sun, Moon, Monitor } from "lucide-react";
+import { Sun, Moon } from "lucide-react";
 import { useAppStore } from "@/stores/appStore";
 import type { Theme } from "@/types";
-
-const themes: { value: Theme; icon: typeof Sun }[] = [
-  { value: "light", icon: Sun },
-  { value: "dark", icon: Moon },
-  { value: "system", icon: Monitor },
-];
 
 export function ThemeToggle() {
   const { theme, setTheme } = useAppStore();
 
+  const cycleTheme = () => {
+    const order: Theme[] = ["dark", "light", "system"];
+    const idx = order.indexOf(theme);
+    setTheme(order[(idx + 1) % order.length]);
+  };
+
+  const isDark = theme === "dark" || (theme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+
   return (
-    <div className="flex items-center gap-1 rounded-lg bg-secondary p-1">
-      {themes.map(({ value, icon: Icon }) => (
-        <button
-          key={value}
-          onClick={() => setTheme(value)}
-          className={`rounded-md p-1.5 transition-colors ${
-            theme === value
-              ? "bg-background text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          <Icon size={14} />
-        </button>
-      ))}
-    </div>
+    <button
+      onClick={cycleTheme}
+      className="glass-btn flex h-8 w-8 items-center justify-center rounded-lg transition-all"
+      title={theme}
+    >
+      {isDark ? <Moon size={16} /> : <Sun size={16} />}
+    </button>
   );
 }

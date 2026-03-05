@@ -1,8 +1,11 @@
 use std::path::Path;
 use std::process::{Child, Command, Stdio};
-use std::io::{BufRead, BufReader};
+use std::io::{BufRead, BufReader, Read};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::time::{Duration, Instant};
+
+const PROCESS_TIMEOUT: Duration = Duration::from_secs(3600); // 1 hour max
 
 use tauri::ipc::Channel;
 
@@ -18,10 +21,12 @@ extern crate libc;
 pub struct FfmpegProcess {
     child: Option<Child>,
     cancelled: Arc<AtomicBool>,
+    finished: bool,
 }
 
 impl FfmpegProcess {
-    /// Spawn a new FFmpeg compression process and stream progress via Channel
+    /// Spawn a new FFmpeg compression process and stream progress via Channel.
+    /// If an external cancel flag is provided, it will be used instead of creating a new one.
     pub fn spawn(
         ffmpeg_path: &Path,
         input: &str,
@@ -31,8 +36,11 @@ impl FfmpegProcess {
         duration_secs: f64,
         task_id: &str,
         channel: &Channel<ProgressEvent>,
+        external_cancel: Option<Arc<AtomicBool>>,
     ) -> Result<Self, AppError> {
         let args = build_args(input, output, config, encoder, duration_secs);
+
+        log::info!("FFmpeg args: {:?}", args);
 
         let mut child = Command::new(ffmpeg_path)
             .args(&args)
@@ -41,12 +49,24 @@ impl FfmpegProcess {
             .stdin(Stdio::null())
             .spawn()?;
 
-        let cancelled = Arc::new(AtomicBool::new(false));
+        let cancelled = external_cancel.unwrap_or_else(|| Arc::new(AtomicBool::new(false)));
         let cancelled_clone = cancelled.clone();
 
         let stdout = child.stdout.take().ok_or_else(|| {
             AppError::FfmpegError("Failed to capture stdout".into())
         })?;
+
+        // Drain stderr in a background thread to prevent buffer deadlock.
+        // FFmpeg writes encoding info/warnings to stderr; if the pipe buffer
+        // fills up, the process blocks and the output file is truncated.
+        let stderr = child.stderr.take();
+        std::thread::spawn(move || {
+            if let Some(mut stderr) = stderr {
+                let mut buf = Vec::new();
+                let _ = stderr.read_to_end(&mut buf);
+                // stderr content discarded; could be logged in the future
+            }
+        });
 
         let task_id_owned = task_id.to_string();
         let channel_clone = channel.clone();
@@ -102,14 +122,38 @@ impl FfmpegProcess {
         Ok(Self {
             child: Some(child),
             cancelled,
+            finished: false,
         })
     }
 
     /// Wait for the FFmpeg process to finish
     pub fn wait(&mut self) -> Result<bool, AppError> {
         if let Some(ref mut child) = self.child {
-            let status = child.wait()?;
-            Ok(status.success())
+            let start = Instant::now();
+            loop {
+                match child.try_wait() {
+                    Ok(Some(status)) => {
+                        self.finished = true;
+                        return Ok(status.success());
+                    }
+                    Ok(None) => {
+                        if start.elapsed() > PROCESS_TIMEOUT {
+                            log::error!("FFmpeg process timed out after {:?}", PROCESS_TIMEOUT);
+                            let _ = child.kill();
+                            let _ = child.wait();
+                            self.finished = true;
+                            return Err(AppError::FfmpegError(
+                                "Process timed out after 1 hour".into(),
+                            ));
+                        }
+                        std::thread::sleep(Duration::from_millis(100));
+                    }
+                    Err(e) => {
+                        self.finished = true;
+                        return Err(AppError::Io(e));
+                    }
+                }
+            }
         } else {
             Ok(false)
         }
@@ -140,9 +184,12 @@ impl FfmpegProcess {
 
 impl Drop for FfmpegProcess {
     fn drop(&mut self) {
-        if let Some(ref mut child) = self.child {
-            let _ = child.kill();
-            let _ = child.wait();
+        // Only kill the process if it hasn't been waited on yet
+        if !self.finished {
+            if let Some(ref mut child) = self.child {
+                let _ = child.kill();
+                let _ = child.wait();
+            }
         }
     }
 }

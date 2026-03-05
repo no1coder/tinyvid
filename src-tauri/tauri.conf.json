@@ -16,19 +16,20 @@
         "width": 1100,
         "height": 720,
         "minWidth": 900,
-        "minHeight": 600
+        "minHeight": 600,
+        "transparent": true,
+        "decorations": true,
+        "titleBarStyle": "Overlay",
+        "hiddenTitle": true,
+        "windowEffects": {
+          "effects": ["underWindowBackground"],
+          "state": "active"
+        }
       }
     ],
+    "macOSPrivateApi": true,
     "security": {
       "csp": null
-    }
-  },
-  "plugins": {
-    "dialog": {},
-    "fs": {
-      "scope": {
-        "allow": ["**"]
-      }
     }
   },
   "bundle": {
@@ -40,6 +41,13 @@
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
+    ],
+    "externalBin": [
+      "binaries/ffmpeg",
+      "binaries/ffprobe"
+    ],
+    "resources": [
+      "binaries/lib/*"
     ]
   }
 }

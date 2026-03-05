@@ -30,6 +30,21 @@ export interface TaskInfo {
   inputSize: number;
   outputSize: number | null;
   error: string | null;
+  // Real-time progress fields
+  fps: number;
+  speed: number;
+  eta: number;
+  currentSize: number;
+  timeElapsed: number;
+  // Estimation fields
+  estimatedOutputSize: number | null;
+  estimatedTime: number | null;
+}
+
+export interface EstimationResult {
+  estimatedSize: number;
+  estimatedTime: number;
+  ratio: number;
 }
 
 export interface ProgressEvent {
@@ -52,6 +67,8 @@ export interface CompressionConfig {
   useHardware: boolean;
   resolution: string;
   audioBitrate: string;
+  outputDir: string | null;
+  maxConcurrency: number | null;
 }
 
 export interface EncoderInfo {
@@ -59,6 +76,22 @@ export interface EncoderInfo {
   codec: string;
   isHardware: boolean;
   priority: number;
+}
+
+export interface DiskSpaceInfo {
+  availableBytes: number;
+  totalBytes: number;
+  requiredBytes: number;
+  sufficient: boolean;
+  tight: boolean;
+}
+
+export interface UpdateInfo {
+  hasUpdate: boolean;
+  latestVersion: string;
+  currentVersion: string;
+  releaseUrl: string;
+  releaseNotes: string;
 }
 
 export type Theme = "light" | "dark" | "system";

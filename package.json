@@ -12,9 +12,11 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@tanstack/react-virtual": "^3.13.19",
     "@tauri-apps/api": "^2",
     "@tauri-apps/plugin-dialog": "^2",
     "@tauri-apps/plugin-fs": "^2",
+    "@tauri-apps/plugin-notification": "^2.3.3",
     "i18next": "^24.2.2",
     "lucide-react": "^0.474.0",
     "react": "^19.1.0",
@@ -24,6 +26,7 @@
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.1.0",
+    "@tauri-apps/cli": "^2",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
     "@types/react": "^19.1.8",
@@ -34,7 +37,6 @@
     "tailwindcss": "^4.1.0",
     "typescript": "~5.8.3",
     "vite": "^7.0.4",
-    "vitest": "^3.1.0",
-    "@tauri-apps/cli": "^2"
+    "vitest": "^3.1.0"
   }
 }

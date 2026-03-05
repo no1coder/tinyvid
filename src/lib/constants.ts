@@ -1,3 +1,7 @@
+export const APP_VERSION = "0.1.0";
+export const GITHUB_REPO = "no1coder/tinyvid";
+export const UPDATE_CHECK_INTERVAL = 4 * 60 * 60 * 1000; // 4 hours
+
 export const SUPPORTED_FORMATS = [
   "mp4", "mkv", "avi", "mov", "wmv", "flv", "webm", "m4v",
   "ts", "mts", "m2ts", "vob", "mpg", "mpeg", "3gp",

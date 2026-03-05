@@ -1,36 +1,25 @@
 import { useTranslation } from "react-i18next";
+import { Globe } from "lucide-react";
 import { useAppStore } from "@/stores/appStore";
 import type { Language } from "@/types";
-
-const languages: { value: Language; label: string }[] = [
-  { value: "en", label: "EN" },
-  { value: "zh-CN", label: "中文" },
-];
 
 export function LanguageSwitch() {
   const { language, setLanguage } = useAppStore();
   const { i18n } = useTranslation();
 
-  const handleChange = (lang: Language) => {
-    setLanguage(lang);
-    i18n.changeLanguage(lang);
+  const toggle = () => {
+    const next: Language = language === "en" ? "zh-CN" : "en";
+    setLanguage(next);
+    i18n.changeLanguage(next);
   };
 
   return (
-    <div className="flex items-center gap-1 rounded-lg bg-secondary p-1">
-      {languages.map(({ value, label }) => (
-        <button
-          key={value}
-          onClick={() => handleChange(value)}
-          className={`rounded-md px-2 py-1 text-xs font-medium transition-colors ${
-            language === value
-              ? "bg-background text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          {label}
-        </button>
-      ))}
-    </div>
+    <button
+      onClick={toggle}
+      className="glass-btn flex h-8 items-center gap-1.5 rounded-lg px-2 text-[12px] font-semibold transition-all"
+    >
+      <Globe size={16} />
+      {language === "en" ? "EN" : "中"}
+    </button>
   );
 }

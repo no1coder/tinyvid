@@ -7,12 +7,12 @@ export function CrfSlider() {
   const { config, setCrf } = useSettingsStore();
 
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="settings-row flex flex-col gap-2 px-4 py-3">
       <div className="flex items-center justify-between">
-        <label className="text-xs font-medium text-muted-foreground">
-          {t("settings.quality")}
-        </label>
-        <span className="text-xs font-mono font-medium">{config.crf}</span>
+        <span className="text-[14px]">{t("settings.quality")}</span>
+        <span className="rounded-md bg-[rgba(255,255,255,0.1)] px-2 py-0.5 font-mono text-[12px] font-semibold">
+          {config.crf}
+        </span>
       </div>
       <input
         type="range"
@@ -21,7 +21,7 @@ export function CrfSlider() {
         step={1}
         value={config.crf}
         onChange={(e) => setCrf(Number(e.target.value))}
-        className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-secondary accent-primary"
+        className="w-full cursor-pointer"
       />
       <div className="flex justify-between text-[10px] text-muted-foreground">
         <span>{t("settings.qualityHint.high")}</span>

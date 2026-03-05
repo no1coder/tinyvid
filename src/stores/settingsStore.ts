@@ -9,6 +9,8 @@ interface SettingsState {
   setUseHardware: (use: boolean) => void;
   setResolution: (resolution: string) => void;
   setAudioBitrate: (bitrate: string) => void;
+  setOutputDir: (dir: string | null) => void;
+  setMaxConcurrency: (max: number | null) => void;
 }
 
 const loadSaved = (): CompressionConfig => {
@@ -22,6 +24,8 @@ const loadSaved = (): CompressionConfig => {
     useHardware: true,
     resolution: "original",
     audioBitrate: "copy",
+    outputDir: null,
+    maxConcurrency: null,
   };
 };
 
@@ -58,6 +62,18 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   setAudioBitrate: (audioBitrate) =>
     set((state) => {
       const config = { ...state.config, audioBitrate };
+      persist(config);
+      return { config };
+    }),
+  setOutputDir: (outputDir) =>
+    set((state) => {
+      const config = { ...state.config, outputDir };
+      persist(config);
+      return { config };
+    }),
+  setMaxConcurrency: (maxConcurrency) =>
+    set((state) => {
+      const config = { ...state.config, maxConcurrency };
       persist(config);
       return { config };
     }),

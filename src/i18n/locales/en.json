@@ -1,27 +1,28 @@
 {
   "app": {
     "title": "TinyVid",
-    "subtitle": "Video Batch Compression"
+    "subtitle": "Fast video compression for macOS"
+  },
+  "nav": {
+    "compressor": "Compressor",
+    "tasks": "Tasks",
+    "settings": "Settings"
   },
   "dropzone": {
-    "title": "Drop videos here",
-    "subtitle": "or click to browse files",
+    "title": "Drop videos to compress",
+    "subtitle": "Supports MP4, MOV, WebM and more",
     "dragging": "Release to add videos",
     "browse": "Browse Files",
-    "browseFolder": "Browse Folder"
+    "browseFolder": "Browse Folder",
+    "addMore": "Add Files"
   },
   "fileList": {
-    "name": "Name",
-    "resolution": "Resolution",
-    "duration": "Duration",
-    "size": "Size",
-    "codec": "Codec",
-    "empty": "No videos imported",
-    "remove": "Remove",
     "clearAll": "Clear All"
   },
   "settings": {
     "title": "Settings",
+    "compressionQuality": "Compression Quality",
+    "preferences": "Preferences",
     "codec": "Codec",
     "quality": "Quality (CRF)",
     "qualityHint": {
@@ -40,43 +41,67 @@
       "title": "Hardware Acceleration",
       "detected": "Detected: {{encoder}}",
       "none": "No hardware encoder detected"
+    },
+    "output": {
+      "title": "Output Directory",
+      "sameAsInput": "Same as input file",
+      "change": "Change"
+    },
+    "concurrency": {
+      "title": "Parallel Tasks",
+      "auto": "Auto"
     }
   },
   "task": {
     "start": "Start Compression",
     "cancelAll": "Cancel All",
     "clearCompleted": "Clear Completed",
-    "status": {
-      "pending": "Pending",
-      "running": "Compressing",
-      "paused": "Paused",
-      "completed": "Completed",
-      "failed": "Failed",
-      "cancelled": "Cancelled"
-    },
+    "newBatch": "New Batch",
+    "retryFailed": "Retry Failed",
+    "showInFolder": "Show in Finder",
     "eta": "ETA: {{time}}",
-    "speed": "{{speed}}x",
-    "noTasks": "No tasks in queue"
+    "speed": "{{speed}}x"
   },
-  "comparison": {
-    "title": "Compression Results",
+  "taskHistory": {
+    "title": "Task History",
+    "subtitle": "View all compression tasks",
+    "all": "All",
+    "completed": "Completed",
+    "failed": "Failed",
+    "search": "Search tasks...",
+    "empty": "No tasks to display"
+  },
+  "stats": {
+    "active": "{{count}} active",
+    "completed": "completed",
+    "compressing": "Compressing {{current}} of {{total}} files...",
+    "successCount": "Successfully compressed {{count}} files",
+    "eta": "ETA",
     "original": "Original",
     "compressed": "Compressed",
-    "saved": "Saved",
-    "ratio": "Compression Ratio"
+    "saved": "Saved"
   },
-  "theme": {
-    "light": "Light",
-    "dark": "Dark",
-    "system": "System"
+  "notification": {
+    "allCompleted": "Compression Complete",
+    "completedBody": "{{count}} files compressed successfully.",
+    "completedWithErrors": "Compression Finished",
+    "completedWithErrorsBody": "{{completed}} succeeded, {{failed}} failed."
   },
-  "language": {
-    "en": "English",
-    "zh": "中文"
+  "version": {
+    "current": "v{{version}}",
+    "updateAvailable": "v{{version}} available",
+    "download": "Download",
+    "dismiss": "Dismiss",
+    "checkingForUpdate": "Checking for updates...",
+    "upToDate": "You're up to date"
   },
   "error": {
     "ffmpegNotFound": "FFmpeg not found. Please install FFmpeg.",
     "noVideos": "No videos to compress",
-    "compressionFailed": "Compression failed: {{error}}"
+    "compressionFailed": "Compression failed: {{error}}",
+    "insufficientDisk": "Not enough disk space. Available: {{available}}, Required: {{required}}.",
+    "tightDisk": "Disk space is low ({{available}} available). Compression may fail.",
+    "dismiss": "Dismiss",
+    "alreadyCompressed": "{{count}} file(s) appear already compressed and were skipped."
   }
 }

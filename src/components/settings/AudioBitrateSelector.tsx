@@ -7,17 +7,15 @@ export function AudioBitrateSelector() {
   const { config, setAudioBitrate } = useSettingsStore();
 
   return (
-    <div className="flex flex-col gap-1.5">
-      <label className="text-xs font-medium text-muted-foreground">
-        {t("settings.audio.title")}
-      </label>
+    <div className="settings-row flex items-center justify-between rounded-b-[10px] px-4 py-3">
+      <span className="text-[14px]">{t("settings.audio.title")}</span>
       <select
         value={config.audioBitrate}
         onChange={(e) => setAudioBitrate(e.target.value)}
-        className="rounded-md border border-border bg-background px-3 py-1.5 text-xs focus:border-primary focus:outline-none"
+        className="cursor-pointer rounded-md bg-[rgba(255,255,255,0.1)] px-2 py-1 text-[12px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
       >
         {AUDIO_BITRATES.map(({ value, label }) => (
-          <option key={value} value={value}>
+          <option key={value} value={value} className="bg-[#2a2a2a]">
             {label.startsWith("settings.") ? t(label) : label}
           </option>
         ))}

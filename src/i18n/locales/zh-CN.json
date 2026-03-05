@@ -1,27 +1,28 @@
 {
   "app": {
     "title": "TinyVid",
-    "subtitle": "视频批量压缩工具"
+    "subtitle": "快速视频压缩工具"
+  },
+  "nav": {
+    "compressor": "压缩器",
+    "tasks": "任务",
+    "settings": "设置"
   },
   "dropzone": {
-    "title": "将视频拖放到此处",
-    "subtitle": "或点击浏览文件",
+    "title": "拖放视频进行压缩",
+    "subtitle": "支持 MP4、MOV、WebM 等格式",
     "dragging": "松开以添加视频",
     "browse": "浏览文件",
-    "browseFolder": "浏览文件夹"
+    "browseFolder": "浏览文件夹",
+    "addMore": "添加文件"
   },
   "fileList": {
-    "name": "文件名",
-    "resolution": "分辨率",
-    "duration": "时长",
-    "size": "大小",
-    "codec": "编码",
-    "empty": "未导入视频",
-    "remove": "移除",
     "clearAll": "清除全部"
   },
   "settings": {
     "title": "设置",
+    "compressionQuality": "压缩质量",
+    "preferences": "偏好设置",
     "codec": "编码器",
     "quality": "质量 (CRF)",
     "qualityHint": {
@@ -40,43 +41,67 @@
       "title": "硬件加速",
       "detected": "已检测: {{encoder}}",
       "none": "未检测到硬件编码器"
+    },
+    "output": {
+      "title": "输出目录",
+      "sameAsInput": "与源文件相同",
+      "change": "更改"
+    },
+    "concurrency": {
+      "title": "并行任务数",
+      "auto": "自动"
     }
   },
   "task": {
     "start": "开始压缩",
     "cancelAll": "取消全部",
     "clearCompleted": "清除已完成",
-    "status": {
-      "pending": "等待中",
-      "running": "压缩中",
-      "paused": "已暂停",
-      "completed": "已完成",
-      "failed": "失败",
-      "cancelled": "已取消"
-    },
+    "newBatch": "新批次",
+    "retryFailed": "重试失败项",
+    "showInFolder": "在访达中显示",
     "eta": "预计剩余: {{time}}",
-    "speed": "{{speed}}x",
-    "noTasks": "队列中没有任务"
+    "speed": "{{speed}}x"
   },
-  "comparison": {
-    "title": "压缩结果",
+  "taskHistory": {
+    "title": "任务历史",
+    "subtitle": "查看所有压缩任务",
+    "all": "全部",
+    "completed": "已完成",
+    "failed": "失败",
+    "search": "搜索任务...",
+    "empty": "暂无任务"
+  },
+  "stats": {
+    "active": "{{count}} 个进行中",
+    "completed": "已完成",
+    "compressing": "正在压缩第 {{current}}/{{total}} 个文件...",
+    "successCount": "成功压缩 {{count}} 个文件",
+    "eta": "剩余时间",
     "original": "原始大小",
     "compressed": "压缩后",
-    "saved": "节省",
-    "ratio": "压缩率"
+    "saved": "已节省"
   },
-  "theme": {
-    "light": "浅色",
-    "dark": "深色",
-    "system": "跟随系统"
+  "notification": {
+    "allCompleted": "压缩完成",
+    "completedBody": "{{count}} 个文件压缩成功。",
+    "completedWithErrors": "压缩结束",
+    "completedWithErrorsBody": "{{completed}} 个成功，{{failed}} 个失败。"
   },
-  "language": {
-    "en": "English",
-    "zh": "中文"
+  "version": {
+    "current": "v{{version}}",
+    "updateAvailable": "v{{version}} 可用",
+    "download": "下载",
+    "dismiss": "忽略",
+    "checkingForUpdate": "正在检查更新...",
+    "upToDate": "已是最新版本"
   },
   "error": {
     "ffmpegNotFound": "未找到 FFmpeg，请先安装 FFmpeg。",
     "noVideos": "没有可压缩的视频",
-    "compressionFailed": "压缩失败: {{error}}"
+    "compressionFailed": "压缩失败: {{error}}",
+    "insufficientDisk": "磁盘空间不足。可用: {{available}}，需要: {{required}}。",
+    "tightDisk": "磁盘空间紧张（可用 {{available}}），压缩可能失败。",
+    "dismiss": "忽略",
+    "alreadyCompressed": "{{count}} 个文件似乎已经压缩过，已自动跳过。"
   }
 }

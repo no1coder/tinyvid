@@ -146,3 +146,98 @@ fn parse_frame_rate(rate: &str) -> Option<f64> {
     }
     rate.parse::<f64>().ok()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_frame_rate_fraction() {
+        let fps = parse_frame_rate("30000/1001").unwrap();
+        assert!((fps - 29.97).abs() < 0.01);
+    }
+
+    #[test]
+    fn test_parse_frame_rate_integer_fraction() {
+        let fps = parse_frame_rate("30/1").unwrap();
+        assert!((fps - 30.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn test_parse_frame_rate_60fps() {
+        let fps = parse_frame_rate("60000/1001").unwrap();
+        assert!((fps - 59.94).abs() < 0.01);
+    }
+
+    #[test]
+    fn test_parse_frame_rate_plain_float() {
+        let fps = parse_frame_rate("25.0").unwrap();
+        assert!((fps - 25.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn test_parse_frame_rate_plain_integer() {
+        let fps = parse_frame_rate("24").unwrap();
+        assert!((fps - 24.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn test_parse_frame_rate_zero_denominator() {
+        assert!(parse_frame_rate("30/0").is_none());
+    }
+
+    #[test]
+    fn test_parse_frame_rate_invalid() {
+        assert!(parse_frame_rate("abc").is_none());
+        assert!(parse_frame_rate("").is_none());
+        assert!(parse_frame_rate("abc/def").is_none());
+    }
+
+    #[test]
+    fn test_parse_frame_rate_0_0() {
+        let fps = parse_frame_rate("0/1").unwrap();
+        assert!((fps - 0.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn test_video_info_serialization() {
+        let info = VideoInfo {
+            path: "/test/video.mp4".into(),
+            file_name: "video.mp4".into(),
+            size: 1024,
+            duration: 10.5,
+            width: 1920,
+            height: 1080,
+            codec: "hevc".into(),
+            bitrate: 5000000,
+            fps: 30.0,
+            audio_codec: Some("aac".into()),
+            audio_bitrate: Some(128000),
+        };
+
+        let json = serde_json::to_string(&info).unwrap();
+        assert!(json.contains("\"fileName\""));
+        assert!(json.contains("\"audioCodec\""));
+        assert!(json.contains("\"audioBitrate\""));
+    }
+
+    #[test]
+    fn test_video_info_optional_audio() {
+        let info = VideoInfo {
+            path: "/test/video.mp4".into(),
+            file_name: "video.mp4".into(),
+            size: 1024,
+            duration: 10.0,
+            width: 1920,
+            height: 1080,
+            codec: "h264".into(),
+            bitrate: 5000000,
+            fps: 24.0,
+            audio_codec: None,
+            audio_bitrate: None,
+        };
+
+        let json = serde_json::to_string(&info).unwrap();
+        assert!(json.contains("\"audioCodec\":null"));
+    }
+}

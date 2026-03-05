@@ -37,7 +37,9 @@ pub fn parse_encoders_output(output: &str) -> Vec<EncoderInfo> {
     for line in output.lines() {
         let trimmed = line.trim();
         for (name, codec, is_hw, priority) in &known_encoders {
-            if trimmed.contains(name) {
+            // Match exact encoder name (space-delimited) to avoid "libx264rgb" matching "libx264"
+            let pattern = format!(" {} ", name);
+            if trimmed.contains(&pattern) {
                 encoders.push(EncoderInfo {
                     name: name.to_string(),
                     codec: codec.to_string(),
@@ -138,5 +140,101 @@ mod tests {
         let mut sorted = priorities.clone();
         sorted.sort();
         assert_eq!(priorities, sorted);
+    }
+
+    #[test]
+    fn test_hw_encoder_detection_videotoolbox() {
+        let output = r#"Encoders:
+ V..... hevc_videotoolbox    VideoToolbox H.265 Encoder (codec hevc)
+ V..... h264_videotoolbox    VideoToolbox H.264 Encoder (codec h264)
+"#;
+        let encoders = parse_encoders_output(output);
+        let vt = encoders.iter().find(|e| e.name == "hevc_videotoolbox");
+        assert!(vt.is_some());
+        let vt = vt.unwrap();
+        assert!(vt.is_hardware);
+        assert_eq!(vt.codec, "h265");
+        assert_eq!(vt.priority, 10);
+    }
+
+    #[test]
+    fn test_no_duplicate_sw_encoders() {
+        // When SW encoders are already in the output, don't add duplicates
+        let output = r#"Encoders:
+ V..... libx264              libx264 H.264
+ V..... libx265              libx265 H.265
+"#;
+        let encoders = parse_encoders_output(output);
+        let x264_count = encoders.iter().filter(|e| e.name == "libx264").count();
+        let x265_count = encoders.iter().filter(|e| e.name == "libx265").count();
+        assert_eq!(x264_count, 1);
+        assert_eq!(x265_count, 1);
+    }
+
+    #[test]
+    fn test_encoder_info_serialization() {
+        let info = EncoderInfo {
+            name: "hevc_nvenc".into(),
+            codec: "h265".into(),
+            is_hardware: true,
+            priority: 10,
+        };
+        let json = serde_json::to_string(&info).unwrap();
+        assert!(json.contains("\"isHardware\":true"));
+        assert!(json.contains("\"name\":\"hevc_nvenc\""));
+    }
+
+    #[test]
+    fn test_empty_output_has_both_sw_fallbacks() {
+        let encoders = parse_encoders_output("");
+        assert_eq!(encoders.len(), 2);
+        assert!(encoders.iter().any(|e| e.name == "libx264" && !e.is_hardware));
+        assert!(encoders.iter().any(|e| e.name == "libx265" && !e.is_hardware));
+    }
+
+    #[test]
+    fn test_hw_encoder_comes_before_sw() {
+        let output = r#"Encoders:
+ V..... libx265              libx265 H.265
+ V..... hevc_videotoolbox    VideoToolbox H.265
+"#;
+        let encoders = parse_encoders_output(output);
+        let vt_pos = encoders.iter().position(|e| e.name == "hevc_videotoolbox").unwrap();
+        let sw_pos = encoders.iter().position(|e| e.name == "libx265").unwrap();
+        assert!(vt_pos < sw_pos);
+    }
+
+    #[test]
+    fn test_platform_specific_hw_detection() {
+        // This test checks HW encoder detection for the CURRENT platform.
+        // On macOS: hevc_videotoolbox should be detected.
+        // On Linux/Windows: hevc_nvenc should be detected (if in known list).
+        #[cfg(target_os = "macos")]
+        {
+            let output = " V..... hevc_videotoolbox    VideoToolbox HEVC\n";
+            let encoders = parse_encoders_output(output);
+            let hw = encoders.iter().find(|e| e.name == "hevc_videotoolbox");
+            assert!(hw.is_some());
+            assert!(hw.unwrap().is_hardware);
+        }
+        #[cfg(not(target_os = "macos"))]
+        {
+            let output = " V..... hevc_nvenc           NVIDIA NVENC hevc\n";
+            let encoders = parse_encoders_output(output);
+            let hw = encoders.iter().find(|e| e.name == "hevc_nvenc");
+            assert!(hw.is_some());
+            assert!(hw.unwrap().is_hardware);
+        }
+    }
+
+    #[test]
+    fn test_unrecognized_encoder_ignored() {
+        // Encoders not in the known list for this platform are ignored
+        let output = " V..... totally_fake_encoder  Fake encoder\n";
+        let encoders = parse_encoders_output(output);
+        assert!(!encoders.iter().any(|e| e.name == "totally_fake_encoder"));
+        // But SW fallbacks are always present
+        assert!(encoders.iter().any(|e| e.name == "libx264"));
+        assert!(encoders.iter().any(|e| e.name == "libx265"));
     }
 }

@@ -12,6 +12,8 @@ describe("settingsStore", () => {
         useHardware: true,
         resolution: "original",
         audioBitrate: "copy",
+        outputDir: null,
+        maxConcurrency: null,
       },
     });
   });

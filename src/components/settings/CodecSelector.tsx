@@ -11,19 +11,17 @@ export function CodecSelector() {
   ];
 
   return (
-    <div className="flex flex-col gap-1.5">
-      <label className="text-xs font-medium text-muted-foreground">
-        {t("settings.codec")}
-      </label>
-      <div className="flex gap-2">
+    <div className="settings-row flex items-center justify-between rounded-t-[10px] px-4 py-3">
+      <span className="text-[14px]">{t("settings.codec")}</span>
+      <div className="flex gap-1">
         {codecs.map(({ value, label }) => (
           <button
             key={value}
             onClick={() => setCodec(value)}
-            className={`flex-1 rounded-md border px-3 py-1.5 text-xs font-medium transition-colors ${
+            className={`rounded-md px-3 py-1 text-[12px] font-medium transition-all ${
               config.codec === value
-                ? "border-primary bg-primary/10 text-primary"
-                : "border-border text-muted-foreground hover:border-primary/50"
+                ? "bg-primary text-primary-foreground shadow-sm shadow-primary/30"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             {label}

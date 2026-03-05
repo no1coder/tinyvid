@@ -6,6 +6,20 @@
   "permissions": [
     "core:default",
     "dialog:default",
-    "fs:default"
+    "dialog:allow-open",
+    "fs:default",
+    {
+      "identifier": "fs:allow-read",
+      "allow": [{ "path": "**" }]
+    },
+    {
+      "identifier": "fs:allow-write",
+      "allow": [{ "path": "**" }]
+    },
+    "notification:default",
+    "notification:allow-notify",
+    "notification:allow-request-permission",
+    "notification:allow-is-permission-granted",
+    "core:window:allow-start-dragging"
   ]
 }

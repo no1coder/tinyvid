@@ -1,5 +1,12 @@
 import { create } from "zustand";
-import type { TaskInfo, ProgressEvent, VideoInfo } from "@/types";
+import type {
+  TaskInfo,
+  ProgressEvent,
+  VideoInfo,
+  CompressionConfig,
+  EncoderInfo,
+} from "@/types";
+import { estimateVideo } from "@/lib/estimation";
 
 interface TaskState {
   videos: VideoInfo[];
@@ -11,6 +18,29 @@ interface TaskState {
   handleProgressEvent: (event: ProgressEvent) => void;
   removeTask: (taskId: string) => void;
   clearCompletedTasks: () => void;
+  updateEstimations: (
+    config: CompressionConfig,
+    encoders: EncoderInfo[],
+  ) => void;
+}
+
+/** Create a fresh TaskInfo with all fields initialized */
+function createDefaultTaskInfo(partial: Partial<TaskInfo> & { id: string; inputPath: string; fileName: string; inputSize: number }): TaskInfo {
+  return {
+    outputPath: "",
+    status: "pending",
+    progress: 0,
+    outputSize: null,
+    error: null,
+    fps: 0,
+    speed: 0,
+    eta: 0,
+    currentSize: 0,
+    timeElapsed: 0,
+    estimatedOutputSize: null,
+    estimatedTime: null,
+    ...partial,
+  };
 }
 
 export const useTaskStore = create<TaskState>((set) => ({
@@ -33,9 +63,11 @@ export const useTaskStore = create<TaskState>((set) => ({
   clearVideos: () => set({ videos: [] }),
 
   setTasks: (tasks) =>
-    set((state) => ({
-      tasks: [...state.tasks, ...tasks],
-    })),
+    set((state) => {
+      // Ensure all tasks have the new fields initialized
+      const initialized = tasks.map((t) => createDefaultTaskInfo(t));
+      return { tasks: [...state.tasks, ...initialized] };
+    }),
 
   handleProgressEvent: (event) =>
     set((state) => {
@@ -50,6 +82,11 @@ export const useTaskStore = create<TaskState>((set) => ({
               ...task,
               status: "running" as const,
               progress: event.percent ?? task.progress,
+              fps: event.fps ?? task.fps,
+              speed: event.speed ?? task.speed,
+              eta: event.eta ?? task.eta,
+              currentSize: event.currentSize ?? task.currentSize,
+              timeElapsed: event.timeElapsed ?? task.timeElapsed,
             };
           case "completed":
             return {
@@ -58,15 +95,21 @@ export const useTaskStore = create<TaskState>((set) => ({
               progress: 100,
               outputPath: event.outputPath ?? task.outputPath,
               outputSize: event.outputSize ?? null,
+              fps: 0,
+              speed: 0,
+              eta: 0,
             };
           case "failed":
             return {
               ...task,
               status: "failed" as const,
               error: event.error ?? "Unknown error",
+              fps: 0,
+              speed: 0,
+              eta: 0,
             };
           case "cancelled":
-            return { ...task, status: "cancelled" as const };
+            return { ...task, status: "cancelled" as const, fps: 0, speed: 0, eta: 0 };
           default:
             return task;
         }
@@ -88,4 +131,21 @@ export const useTaskStore = create<TaskState>((set) => ({
           t.status !== "failed",
       ),
     })),
+
+  updateEstimations: (config, encoders) =>
+    set((state) => {
+      const updatedVideos = state.videos; // videos don't change
+      // Also update tasks if they have matching input paths
+      const updatedTasks = state.tasks.map((task) => {
+        const video = state.videos.find((v) => v.path === task.inputPath);
+        if (!video || task.status !== "pending") return task;
+        const est = estimateVideo(video, config, encoders);
+        return {
+          ...task,
+          estimatedOutputSize: est.estimatedSize,
+          estimatedTime: est.estimatedTime,
+        };
+      });
+      return { videos: updatedVideos, tasks: updatedTasks };
+    }),
 }));

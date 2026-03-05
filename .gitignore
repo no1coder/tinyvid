@@ -26,7 +26,25 @@ dist-ssr
 # Tauri
 src-tauri/target
 src-tauri/gen
+src-tauri/binaries/
 
 # Claude
+.claude/
 .claude-flow
 .spec-workflow
+
+# Design files
+*.pen
+images/
+
+# Test media
+*.MOV
+*.mov
+*.mp4
+
+# Temporary
+public/logo-v.png
+
+# Mobile icons (not needed for desktop)
+src-tauri/icons/android/
+src-tauri/icons/ios/

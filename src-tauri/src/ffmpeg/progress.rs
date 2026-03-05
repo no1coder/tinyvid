@@ -183,4 +183,110 @@ mod tests {
         acc.feed("speed", "2.5x");
         assert!((acc.speed.unwrap() - 2.5).abs() < 0.01);
     }
+
+    #[test]
+    fn test_accumulator_reset() {
+        let mut acc = ProgressAccumulator::default();
+        acc.feed("fps", "30.0");
+        acc.feed("speed", "2.0x");
+        acc.feed("out_time_us", "5000000");
+        acc.feed("total_size", "1234567");
+        acc.feed("progress", "continue");
+
+        assert!(acc.is_frame_complete());
+
+        acc.reset();
+
+        assert!(acc.out_time_us.is_none());
+        assert!(acc.fps.is_none());
+        assert!(acc.speed.is_none());
+        assert!(acc.total_size.is_none());
+        assert!(acc.progress.is_none());
+        assert!(!acc.is_frame_complete());
+    }
+
+    #[test]
+    fn test_accumulator_calc_percent_clamped() {
+        let mut acc = ProgressAccumulator::default();
+        // out_time exceeds total duration
+        acc.out_time_us = Some(20_000_000);
+        let total_us = 10_000_000;
+        assert_eq!(acc.calc_percent(total_us), 100.0);
+    }
+
+    #[test]
+    fn test_accumulator_calc_eta_zero_speed() {
+        let mut acc = ProgressAccumulator::default();
+        acc.out_time_us = Some(5_000_000);
+        acc.speed = Some(0.0);
+        assert_eq!(acc.calc_eta(10.0), 0.0);
+    }
+
+    #[test]
+    fn test_accumulator_calc_eta_no_speed() {
+        let acc = ProgressAccumulator::default();
+        assert_eq!(acc.calc_eta(10.0), 0.0);
+    }
+
+    #[test]
+    fn test_accumulator_calc_eta_past_end() {
+        let mut acc = ProgressAccumulator::default();
+        acc.out_time_us = Some(15_000_000); // past end
+        acc.speed = Some(2.0);
+        assert_eq!(acc.calc_eta(10.0), 0.0);
+    }
+
+    #[test]
+    fn test_feed_unknown_key_ignored() {
+        let mut acc = ProgressAccumulator::default();
+        acc.feed("unknown_key", "some_value");
+        assert!(acc.out_time_us.is_none());
+        assert!(acc.fps.is_none());
+        assert!(acc.speed.is_none());
+    }
+
+    #[test]
+    fn test_feed_invalid_values() {
+        let mut acc = ProgressAccumulator::default();
+        acc.feed("fps", "not_a_number");
+        assert!(acc.fps.is_none());
+        acc.feed("out_time_us", "abc");
+        assert!(acc.out_time_us.is_none());
+    }
+
+    #[test]
+    fn test_speed_na_parsing() {
+        let mut acc = ProgressAccumulator::default();
+        acc.feed("speed", "N/A");
+        assert!(acc.speed.is_none());
+    }
+
+    #[test]
+    fn test_progress_event_serialization() {
+        let event = ProgressEvent::Progress {
+            task_id: "task_1".into(),
+            percent: 50.0,
+            fps: 30.0,
+            speed: 2.0,
+            time_elapsed: 5.0,
+            eta: 5.0,
+            current_size: 1024,
+        };
+        let json = serde_json::to_string(&event).unwrap();
+        assert!(json.contains("\"type\":\"progress\""));
+        assert!(json.contains("\"taskId\""));
+    }
+
+    #[test]
+    fn test_progress_event_completed_serialization() {
+        let event = ProgressEvent::Completed {
+            task_id: "task_1".into(),
+            output_path: "/out.mp4".into(),
+            output_size: 1024,
+        };
+        let json = serde_json::to_string(&event).unwrap();
+        assert!(json.contains("\"type\":\"completed\""));
+        assert!(json.contains("\"outputPath\""));
+        assert!(json.contains("\"outputSize\""));
+    }
 }

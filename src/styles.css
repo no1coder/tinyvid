@@ -2,62 +2,533 @@
 
 @custom-variant dark (&:is(.dark *));
 
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --radius: var(--radius);
+}
+
+/*
+ * TRUE Glassmorphism — Design spec (exact values from pencil file):
+ *
+ * Window:    fill #1e1e1e80 + backdrop-blur(50px) + border #ffffff33 + shadow
+ * Sidebar:   fill #00000026 + border-right #ffffff1a
+ * Card row1: fill #ffffff0d + border #ffffff1a
+ * Card row2: fill #ffffff05 + no border
+ * Active:    fill #ffffff26 + border #ffffff1a
+ * DropZone:  fill #ffffff08 + border #ffffff26 (2px solid)
+ * Buttons:   fill #ffffff1a + border #ffffff1a
+ * Primary:   #0A84FF
+ * Destruct:  #FF3B30
+ * Success:   #34C759
+ */
+
 :root {
-  --background: 0 0% 100%;
-  --foreground: 222.2 84% 4.9%;
-  --card: 0 0% 100%;
-  --card-foreground: 222.2 84% 4.9%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 222.2 84% 4.9%;
-  --primary: 221.2 83.2% 53.3%;
-  --primary-foreground: 210 40% 98%;
-  --secondary: 210 40% 96.1%;
-  --secondary-foreground: 222.2 47.4% 11.2%;
-  --muted: 210 40% 96.1%;
-  --muted-foreground: 215.4 16.3% 46.9%;
-  --accent: 210 40% 96.1%;
-  --accent-foreground: 222.2 47.4% 11.2%;
-  --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 210 40% 98%;
-  --border: 214.3 31.8% 91.4%;
-  --input: 214.3 31.8% 91.4%;
-  --ring: 221.2 83.2% 53.3%;
+  /* Window is transparent — macOS vibrancy handles the blur behind */
+  --background: transparent;
+  --foreground: #ffffff;
+  --card: rgba(255, 255, 255, 0.05);
+  --card-foreground: #ffffff;
+  --popover: rgba(30, 30, 30, 0.95);
+  --popover-foreground: #ffffff;
+  --primary: #0A84FF;
+  --primary-foreground: #ffffff;
+  --secondary: rgba(255, 255, 255, 0.1);
+  --secondary-foreground: #ffffff;
+  --muted: rgba(255, 255, 255, 0.06);
+  --muted-foreground: rgba(255, 255, 255, 0.5);
+  --accent: rgba(255, 255, 255, 0.1);
+  --accent-foreground: #ffffff;
+  --destructive: #FF3B30;
+  --destructive-foreground: #ffffff;
+  --border: rgba(255, 255, 255, 0.1);
+  --input: rgba(255, 255, 255, 0.1);
+  --ring: #0A84FF;
+  --success: #34C759;
+  --success-foreground: #ffffff;
   --radius: 0.5rem;
 }
 
-.dark {
-  --background: 222.2 84% 4.9%;
-  --foreground: 210 40% 98%;
-  --card: 222.2 84% 4.9%;
-  --card-foreground: 210 40% 98%;
-  --popover: 222.2 84% 4.9%;
-  --popover-foreground: 210 40% 98%;
-  --primary: 217.2 91.2% 59.8%;
-  --primary-foreground: 222.2 47.4% 11.2%;
-  --secondary: 217.2 32.6% 17.5%;
-  --secondary-foreground: 210 40% 98%;
-  --muted: 217.2 32.6% 17.5%;
-  --muted-foreground: 215 20.2% 65.1%;
-  --accent: 217.2 32.6% 17.5%;
-  --accent-foreground: 210 40% 98%;
-  --destructive: 0 62.8% 30.6%;
-  --destructive-foreground: 210 40% 98%;
-  --border: 217.2 32.6% 17.5%;
-  --input: 217.2 32.6% 17.5%;
-  --ring: 224.3 76.3% 48%;
+.light {
+  --background: transparent;
+  --foreground: #1d1d1f;
+  --card: rgba(255, 255, 255, 0.6);
+  --card-foreground: #1d1d1f;
+  --popover: rgba(255, 255, 255, 0.95);
+  --popover-foreground: #1d1d1f;
+  --primary: #0A84FF;
+  --primary-foreground: #ffffff;
+  --secondary: rgba(0, 0, 0, 0.05);
+  --secondary-foreground: #1d1d1f;
+  --muted: rgba(0, 0, 0, 0.04);
+  --muted-foreground: rgba(0, 0, 0, 0.5);
+  --accent: rgba(0, 0, 0, 0.05);
+  --accent-foreground: #1d1d1f;
+  --destructive: #FF3B30;
+  --destructive-foreground: #ffffff;
+  --border: rgba(0, 0, 0, 0.1);
+  --input: rgba(0, 0, 0, 0.06);
+  --ring: #0A84FF;
+  --success: #34C759;
+  --success-foreground: #ffffff;
 }
 
 * {
-  border-color: hsl(var(--border));
+  border-color: var(--border);
 }
 
-body {
-  background-color: hsl(var(--background));
-  color: hsl(var(--foreground));
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+html, body {
+  background: transparent;
+  color: var(--foreground);
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   margin: 0;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow: hidden;
   user-select: none;
+}
+
+/* ============================================================
+ * GLASS LAYERS — Each uses backdrop-filter for real blur effect
+ * ============================================================ */
+
+/* Sidebar — design: #00000026 + border-right #ffffff1a */
+.glass-sidebar {
+  background: rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+  border-right: 0.5px solid rgba(255, 255, 255, 0.1);
+}
+
+.light .glass-sidebar {
+  background: rgba(255, 255, 255, 0.3);
+  border-right: 0.5px solid rgba(0, 0, 0, 0.08);
+}
+
+/* Active nav item — design: #ffffff26 + border #ffffff1a */
+.glass-active {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 0.5px solid rgba(255, 255, 255, 0.1);
+}
+
+.light .glass-active {
+  background: rgba(255, 255, 255, 0.6);
+  border: 0.5px solid rgba(0, 0, 0, 0.05);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* Glass card */
+.glass-card {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 0.5px solid rgba(255, 255, 255, 0.1);
+}
+
+.light .glass-card {
+  background: rgba(255, 255, 255, 0.6);
+  border: 0.5px solid rgba(0, 0, 0, 0.08);
+}
+
+.glass-card-hover:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.light .glass-card-hover:hover {
+  background: rgba(255, 255, 255, 0.8);
+}
+
+/* Glass button — design: #ffffff1a + border #ffffff1a */
+.glass-btn {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 0.5px solid rgba(255, 255, 255, 0.1);
+}
+
+.light .glass-btn {
+  background: rgba(0, 0, 0, 0.04);
+  border: 0.5px solid rgba(0, 0, 0, 0.08);
+}
+
+.glass-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.light .glass-btn:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+/* ============================================================
+ * DROPZONE
+ * ============================================================ */
+
+/* Full dropzone — design: #ffffff08 fill + #ffffff26 border 2px solid */
+.glass-dropzone {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+}
+
+.light .glass-dropzone {
+  background: rgba(255, 255, 255, 0.3);
+  border: 2px solid rgba(0, 0, 0, 0.08);
+}
+
+.glass-dropzone-active {
+  background: rgba(10, 132, 255, 0.1);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 2px solid rgba(10, 132, 255, 0.5);
+}
+
+/* Compact Add Files — design: #ffffff0d + border #ffffff33 */
+.compact-add-btn {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.light .compact-add-btn {
+  background: rgba(0, 0, 0, 0.03);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.compact-add-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.light .compact-add-btn:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+/* ============================================================
+ * FILE ROWS
+ * ============================================================ */
+
+/* Primary row — design: #ffffff0d + border #ffffff1a */
+.file-row-primary {
+  background: rgba(255, 255, 255, 0.05);
+  border: 0.5px solid rgba(255, 255, 255, 0.1);
+}
+
+.light .file-row-primary {
+  background: rgba(255, 255, 255, 0.6);
+  border: 0.5px solid rgba(0, 0, 0, 0.06);
+}
+
+/* Normal row — design: #ffffff05 */
+.file-row {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.light .file-row {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.file-row:hover,
+.file-row-primary:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.light .file-row:hover,
+.light .file-row-primary:hover {
+  background: rgba(255, 255, 255, 0.8);
+}
+
+/* Active/running row — design: #0a84ff0d fill + #0a84ff4d border 1px */
+.file-row-active {
+  background: rgba(10, 132, 255, 0.05);
+  border: 1px solid rgba(10, 132, 255, 0.3);
+}
+
+.light .file-row-active {
+  background: rgba(10, 132, 255, 0.05);
+  border: 1px solid rgba(10, 132, 255, 0.2);
+}
+
+/* Done row — design: #34c7590d fill + #34c75933 border 1px */
+.file-row-done {
+  background: rgba(52, 199, 89, 0.05);
+  border: 1px solid rgba(52, 199, 89, 0.2);
+}
+
+.light .file-row-done {
+  background: rgba(52, 199, 89, 0.04);
+  border: 1px solid rgba(52, 199, 89, 0.15);
+}
+
+/* Row action button */
+.row-action-btn {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.light .row-action-btn {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.row-action-btn:hover {
+  background: rgba(255, 59, 48, 0.15);
+  color: #FF3B30;
+}
+
+/* ============================================================
+ * BADGES
+ * ============================================================ */
+
+.badge-ready {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.light .badge-ready {
+  background: rgba(0, 0, 0, 0.06);
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.badge-success {
+  background: rgba(52, 199, 89, 0.15);
+  color: #34C759;
+}
+
+.badge-error {
+  background: rgba(255, 59, 48, 0.15);
+  color: #FF3B30;
+}
+
+.badge-cancelled {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.light .badge-cancelled {
+  background: rgba(0, 0, 0, 0.04);
+  color: rgba(0, 0, 0, 0.4);
+}
+
+/* ============================================================
+ * ACTION BUTTONS
+ * ============================================================ */
+
+/* Clear All — design: #ff3b301a fill */
+.clear-btn {
+  background: rgba(255, 59, 48, 0.1);
+  color: #FF3B30;
+}
+
+.clear-btn:hover {
+  background: rgba(255, 59, 48, 0.2);
+}
+
+/* Cancel — design: transparent + stroke #ff3b3080 */
+.cancel-btn {
+  background: transparent;
+  color: #FF3B30;
+  border: 1px solid rgba(255, 59, 48, 0.5);
+}
+
+.cancel-btn:hover {
+  background: rgba(255, 59, 48, 0.1);
+}
+
+/* Outline — design: transparent + stroke #ffffff33 */
+.outline-btn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.light .outline-btn {
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  color: rgba(0, 0, 0, 0.5);
+}
+
+.outline-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.light .outline-btn:hover {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+/* Delete button (legacy) */
+.delete-btn {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.light .delete-btn {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.delete-btn:hover {
+  background: rgba(255, 59, 48, 0.15);
+  color: #FF3B30;
+}
+
+/* File row icon background — design: #ffffff1a */
+.icon-bg {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.light .icon-bg {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+/* Running icon bg — design: #0a84ff33 */
+.icon-bg-active {
+  background: rgba(10, 132, 255, 0.2);
+}
+
+/* Done icon bg — design: #34c7591a */
+.icon-bg-done {
+  background: rgba(52, 199, 89, 0.1);
+}
+
+/* ============================================================
+ * SETTINGS ROWS — design: inline list items with subtle separator
+ * ============================================================ */
+
+.settings-row {
+  background: rgba(255, 255, 255, 0.04);
+  border-bottom: 0.5px solid rgba(255, 255, 255, 0.06);
+}
+
+.settings-row:last-child {
+  border-bottom: none;
+}
+
+.light .settings-row {
+  background: rgba(255, 255, 255, 0.5);
+  border-bottom: 0.5px solid rgba(0, 0, 0, 0.04);
+}
+
+/* ============================================================
+ * SCROLLBAR
+ * ============================================================ */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+}
+
+.light ::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.light ::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.25);
+}
+
+/* ============================================================
+ * FORM ELEMENTS
+ * ============================================================ */
+
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.1);
+  outline: none;
+}
+
+.light input[type="range"] {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #0A84FF;
+  cursor: pointer;
+  border: 2px solid rgba(30, 30, 30, 0.8);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Progress bar */
+.progress-track {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.light .progress-track {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+/* ============================================================
+ * ANIMATIONS
+ * ============================================================ */
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-in-top {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.25s ease-out;
+}
+
+.animate-slide-in-top {
+  animation: slide-in-top 0.25s ease-out;
+}
+
+.animate-pulse-dot {
+  animation: pulse-dot 1.5s ease-in-out infinite;
+}
+
+.animate-spin-slow {
+  animation: spin-slow 2s linear infinite;
 }
