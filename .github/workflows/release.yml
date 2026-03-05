@@ -80,8 +80,6 @@ jobs:
           $ffmpegDir = Get-ChildItem -Path ffmpeg-extracted -Directory | Select-Object -First 1
           Copy-Item "$($ffmpegDir.FullName)/bin/ffmpeg.exe" "src-tauri/binaries/ffmpeg-x86_64-pc-windows-msvc.exe"
           Copy-Item "$($ffmpegDir.FullName)/bin/ffprobe.exe" "src-tauri/binaries/ffprobe-x86_64-pc-windows-msvc.exe"
-          # Windows doesn't need the lib directory
-          New-Item -ItemType Directory -Force -Path "src-tauri/binaries/lib" | Out-Null
 
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0
