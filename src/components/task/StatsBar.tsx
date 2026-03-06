@@ -1,17 +1,17 @@
 import { useTranslation } from "react-i18next";
 import { CheckCircle2, RefreshCw } from "lucide-react";
 import { formatFileSize, formatETA } from "@/lib/format";
-import type { TaskInfo, VideoInfo } from "@/types";
+import type { TaskInfo, UnifiedFileItem } from "@/types";
 
 type Phase = "running" | "done";
 
 interface StatsBarProps {
   tasks: TaskInfo[];
-  videos: VideoInfo[];
+  items: UnifiedFileItem[];
   phase: Phase;
 }
 
-export function StatsBar({ tasks, videos, phase }: StatsBarProps) {
+export function StatsBar({ tasks, items, phase }: StatsBarProps) {
   const { t } = useTranslation();
 
   if (phase === "running") {
@@ -46,7 +46,7 @@ export function StatsBar({ tasks, videos, phase }: StatsBarProps) {
 
   // Phase: done
   const completedTasks = tasks.filter((tk) => tk.status === "completed");
-  const totalOriginal = videos.reduce((sum, v) => sum + v.size, 0);
+  const totalOriginal = items.reduce((sum, item) => sum + item.size, 0);
   const totalCompressed = completedTasks.reduce(
     (sum, tk) => sum + (tk.outputSize ?? 0),
     0,

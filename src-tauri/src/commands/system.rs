@@ -5,7 +5,7 @@ use tauri::State;
 
 use crate::ffmpeg::encoder::EncoderInfo;
 use crate::state::AppState;
-use crate::utils::error::AppError;
+use crate::utils::error::{safe_lock, AppError};
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -19,13 +19,13 @@ pub struct DiskSpaceInfo {
 
 #[tauri::command]
 pub fn detect_hardware(state: State<'_, AppState>) -> Result<Vec<EncoderInfo>, AppError> {
-    let encoders = state.encoders.lock().unwrap();
+    let encoders = safe_lock(&state.encoders);
     Ok(encoders.clone())
 }
 
 #[tauri::command]
 pub fn get_ffmpeg_version(state: State<'_, AppState>) -> Result<String, AppError> {
-    let ffmpeg_path = state.ffmpeg_path.lock().unwrap();
+    let ffmpeg_path = safe_lock(&state.ffmpeg_path);
     let path = ffmpeg_path.as_ref().ok_or(AppError::FfmpegNotFound)?;
 
     let output = std::process::Command::new(path).arg("-version").output()?;
@@ -86,7 +86,8 @@ pub fn show_in_folder(path: String) -> Result<(), AppError> {
     #[cfg(target_os = "windows")]
     {
         std::process::Command::new("explorer")
-            .arg(format!("/select,{}", path))
+            .arg("/select,")
+            .arg(&path)
             .spawn()
             .map_err(|e| AppError::Io(e))?;
     }

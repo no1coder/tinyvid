@@ -6,6 +6,8 @@ import type {
   TaskInfo,
   ProgressEvent,
   DiskSpaceInfo,
+  ImageInfo,
+  ImageCompressionConfig,
 } from "@/types";
 
 export async function detectHardware(): Promise<EncoderInfo[]> {
@@ -75,4 +77,50 @@ export async function checkDiskSpace(
 
 export async function showInFolder(path: string): Promise<void> {
   return invoke("show_in_folder", { path });
+}
+
+// --- Image compression commands ---
+
+export async function probeImages(paths: string[]): Promise<ImageInfo[]> {
+  return invoke<ImageInfo[]>("probe_images", { paths });
+}
+
+export async function addImageTasks(
+  images: ImageInfo[],
+  config: ImageCompressionConfig,
+): Promise<TaskInfo[]> {
+  return invoke<TaskInfo[]>("add_image_tasks", { images, config });
+}
+
+export async function runImageCompression(
+  config: ImageCompressionConfig,
+  onProgress: (event: ProgressEvent) => void,
+): Promise<void> {
+  const channel = new Channel<ProgressEvent>();
+  channel.onmessage = onProgress;
+  return invoke("run_image_compression", { config, channel });
+}
+
+export async function cancelImageTask(taskId: string): Promise<void> {
+  return invoke("cancel_image_task", { taskId });
+}
+
+export async function cancelAllImages(): Promise<void> {
+  return invoke("cancel_all_images");
+}
+
+export async function getImageTasks(): Promise<TaskInfo[]> {
+  return invoke<TaskInfo[]>("get_image_tasks");
+}
+
+export async function clearCompletedImages(): Promise<void> {
+  return invoke("clear_completed_images");
+}
+
+export async function removeImageTask(taskId: string): Promise<void> {
+  return invoke("remove_image_task", { taskId });
+}
+
+export async function retryFailedImages(): Promise<TaskInfo[]> {
+  return invoke<TaskInfo[]>("retry_failed_images");
 }

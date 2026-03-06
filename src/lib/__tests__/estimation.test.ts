@@ -28,6 +28,9 @@ const defaultConfig: CompressionConfig = {
   audioBitrate: "copy",
   outputDir: null,
   maxConcurrency: null,
+  outputFormat: "mp4",
+  filenameTemplate: "{name}_compressed",
+  fps: null,
 };
 
 const hwEncoder: EncoderInfo = {

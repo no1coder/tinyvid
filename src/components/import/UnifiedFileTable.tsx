@@ -1,17 +1,24 @@
 import { useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { X, XCircle, AlertCircle, FolderOpen, FileVideo } from "lucide-react";
-import type { VideoInfo, TaskInfo } from "@/types";
+import {
+  X,
+  XCircle,
+  AlertCircle,
+  FolderOpen,
+  FileVideo,
+  Image as ImageIcon,
+} from "lucide-react";
+import type { UnifiedFileItem, TaskInfo } from "@/types";
 import { formatFileSize, formatETA } from "@/lib/format";
 
 type Phase = "empty" | "ready" | "running" | "done";
 
-interface FileTableProps {
-  videos: VideoInfo[];
+interface UnifiedFileTableProps {
+  items: UnifiedFileItem[];
   tasks: TaskInfo[];
   phase: Phase;
-  onRemoveVideo: (path: string) => void;
+  onRemoveItem: (path: string) => void;
   onCancelTask: (taskId: string) => void;
   onShowInFolder?: (path: string) => void;
 }
@@ -31,24 +38,34 @@ function ProgressBar({ percent }: { percent: number }) {
   );
 }
 
+function formatDimensions(w: number, h: number): string {
+  return `${w}×${h}`;
+}
+
 const ROW_HEIGHT = 72;
 const VIRTUALIZE_THRESHOLD = 25;
 
-export function FileTable({
-  videos,
+export function UnifiedFileTable({
+  items,
   tasks,
   phase,
-  onRemoveVideo,
+  onRemoveItem,
   onCancelTask,
   onShowInFolder,
-}: FileTableProps) {
+}: UnifiedFileTableProps) {
   const { t } = useTranslation();
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const rows = videos.map((video) => {
-    const task = tasks.find((tk) => tk.inputPath === video.path);
-    return { video, task };
-  });
+  // Build a task lookup by input path
+  const taskByPath = new Map<string, TaskInfo>();
+  for (const task of tasks) {
+    taskByPath.set(task.inputPath, task);
+  }
+
+  const rows = items.map((item) => ({
+    item,
+    task: taskByPath.get(item.path),
+  }));
 
   const useVirtual = rows.length > VIRTUALIZE_THRESHOLD;
 
@@ -62,22 +79,22 @@ export function FileTable({
 
   if (rows.length === 0) return null;
 
-  const renderRow = (video: VideoInfo, task: TaskInfo | undefined, index: number) => {
+  const renderRow = (
+    item: UnifiedFileItem,
+    task: TaskInfo | undefined,
+    index: number,
+  ) => {
+    const isVideo = item.type === "video";
     const isRunning = task?.status === "running";
     const isCompleted = task?.status === "completed";
     const isFailed = task?.status === "failed";
     const isCancelled = task?.status === "cancelled";
     const isPending = !task || task.status === "pending";
     const savedPercent =
-      isCompleted && task.outputSize !== null && video.size > 0
-        ? ((1 - task.outputSize / video.size) * 100).toFixed(0)
+      isCompleted && task.outputSize !== null && item.size > 0
+        ? ((1 - task.outputSize / item.size) * 100).toFixed(0)
         : null;
 
-    // Design spec row backgrounds:
-    // Running: #0a84ff0d + #0a84ff4d border, height 72
-    // Done: #34c7590d + #34c75933 border
-    // First row: #ffffff0d + #ffffff1a border
-    // Other rows: #ffffff05
     const isFirstRow = index === 0;
     const rowBg = isRunning
       ? "file-row-active"
@@ -89,31 +106,52 @@ export function FileTable({
 
     const rowHeight = isRunning ? "h-[72px]" : "h-16";
 
-    // Icon background per state: running=blue, done=green, default=white
     const iconBgClass = isRunning
       ? "icon-bg-active"
       : isCompleted
         ? "icon-bg-done"
         : "bg-[#ffffff1a]";
 
-    // Icon color per state
     const iconColorClass = isRunning
       ? "text-primary"
       : isCompleted
         ? "text-success"
         : "opacity-80";
 
+    // Metadata line varies by type
+    const metaLine = isVideo
+      ? (() => {
+          const v = item.videoInfo;
+          if (!v) return formatFileSize(item.size);
+          return `${formatFileSize(v.size)} • ${v.width}x${v.height} • ${v.codec.toUpperCase()}`;
+        })()
+      : (() => {
+          const img = item.imageInfo;
+          if (!img) return formatFileSize(item.size);
+          return `${img.format.toUpperCase()} • ${formatDimensions(img.width, img.height)} • ${formatFileSize(img.size)}`;
+        })();
+
+    // Icon component
+    const IconComponent = isVideo ? FileVideo : ImageIcon;
+
     return (
-      <div className={`${rowBg} flex ${rowHeight} items-center gap-4 rounded-[10px] px-4 transition-all`}>
+      <div
+        className={`${rowBg} flex ${rowHeight} items-center gap-4 rounded-[10px] px-4 transition-all`}
+      >
         {/* File icon */}
-        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${iconBgClass}`}>
-          <FileVideo size={20} className={iconColorClass} />
+        <div
+          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${iconBgClass}`}
+        >
+          <IconComponent size={20} className={iconColorClass} />
         </div>
 
         {/* File info + progress */}
         <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <span className="truncate text-[14px] font-medium leading-tight" title={video.fileName}>
-            {video.fileName}
+          <span
+            className="truncate text-[14px] font-medium leading-tight"
+            title={item.fileName}
+          >
+            {item.fileName}
           </span>
           {isRunning ? (
             <div className="flex flex-col gap-1">
@@ -125,24 +163,28 @@ export function FileTable({
                   {task.progress.toFixed(0)}%
                 </span>
               </div>
-              <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-                {task.speed > 0 && (
-                  <span>{t("task.speed", { speed: task.speed.toFixed(1) })}</span>
-                )}
-                {task.eta > 0 && (
-                  <span>{t("task.eta", { time: formatETA(task.eta) })}</span>
-                )}
-              </div>
+              {isVideo && (
+                <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                  {task.speed > 0 && (
+                    <span>
+                      {t("task.speed", { speed: task.speed.toFixed(1) })}
+                    </span>
+                  )}
+                  {task.eta > 0 && (
+                    <span>{t("task.eta", { time: formatETA(task.eta) })}</span>
+                  )}
+                </div>
+              )}
             </div>
           ) : isCompleted && task.outputSize !== null ? (
             <span className="text-[12px] text-success">
-              {formatFileSize(video.size)} ➔ {formatFileSize(task.outputSize)}
+              {formatFileSize(item.size)} ➔ {formatFileSize(task.outputSize)}
               {savedPercent !== null && ` (-${savedPercent}%)`}
             </span>
           ) : (
             <span className="text-[12px] text-muted-foreground">
-              {formatFileSize(video.size)} • {video.width}x{video.height}
-              {isFailed && task.error && (
+              {metaLine}
+              {isFailed && task?.error && (
                 <span className="text-destructive"> · {task.error}</span>
               )}
             </span>
@@ -152,27 +194,37 @@ export function FileTable({
         {/* Status badge */}
         {isPending && !task && phase === "ready" && (
           <span className="badge-ready shrink-0 rounded px-2 py-1 text-[11px] font-semibold">
-            Ready
+            {t("status.ready")}
           </span>
         )}
         {isPending && task && (
           <span className="badge-ready shrink-0 rounded px-2 py-1 text-[11px] font-semibold">
-            Ready
+            {t("status.ready")}
           </span>
         )}
         {isCompleted && (
           <span className="badge-success shrink-0 rounded px-2 py-1 text-[11px] font-semibold">
-            Done
+            {t("status.done")}
           </span>
         )}
         {isFailed && (
-          <span className="badge-error shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium" title={task.error ?? undefined}>
-            <XCircle size={10} className="mr-0.5 inline" /> Failed
+          <span
+            className="badge-error shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium"
+            title={task.error ?? undefined}
+          >
+            <XCircle size={10} className="mr-0.5 inline" /> {t("status.failed")}
           </span>
         )}
         {isCancelled && (
           <span className="badge-cancelled shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium">
-            <AlertCircle size={10} className="mr-0.5 inline" /> Cancelled
+            <AlertCircle size={10} className="mr-0.5 inline" /> {t("status.cancelled")}
+          </span>
+        )}
+
+        {/* Type indicator badge */}
+        {phase === "ready" && (
+          <span className="shrink-0 rounded-full bg-white/[0.06] px-2 py-0.5 text-[9px] font-medium uppercase text-muted-foreground">
+            {isVideo ? t("mediaType.video") : t("mediaType.image")}
           </span>
         )}
 
@@ -180,7 +232,7 @@ export function FileTable({
         <div className="flex shrink-0 items-center gap-1">
           {isPending && !task && (
             <button
-              onClick={() => onRemoveVideo(video.path)}
+              onClick={() => onRemoveItem(item.path)}
               className="row-action-btn rounded-md p-2 transition-all"
             >
               <X size={14} className="opacity-60" />
@@ -211,12 +263,17 @@ export function FileTable({
   return (
     <div ref={scrollRef} className="flex flex-col gap-2 overflow-auto">
       {useVirtual ? (
-        <div style={{ height: virtualizer.getTotalSize(), position: "relative" }}>
+        <div
+          style={{
+            height: virtualizer.getTotalSize(),
+            position: "relative",
+          }}
+        >
           {virtualizer.getVirtualItems().map((virtualRow) => {
-            const { video, task } = rows[virtualRow.index];
+            const { item, task } = rows[virtualRow.index];
             return (
               <div
-                key={video.path}
+                key={item.path}
                 data-index={virtualRow.index}
                 ref={virtualizer.measureElement}
                 style={{
@@ -226,14 +283,14 @@ export function FileTable({
                   right: 0,
                 }}
               >
-                {renderRow(video, task, virtualRow.index)}
+                {renderRow(item, task, virtualRow.index)}
               </div>
             );
           })}
         </div>
       ) : (
-        rows.map(({ video, task }, index) => (
-          <div key={video.path}>{renderRow(video, task, index)}</div>
+        rows.map(({ item, task }, index) => (
+          <div key={item.path}>{renderRow(item, task, index)}</div>
         ))
       )}
     </div>

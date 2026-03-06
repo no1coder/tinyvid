@@ -1,5 +1,6 @@
 mod commands;
 mod ffmpeg;
+mod image;
 mod state;
 mod task;
 mod utils;
@@ -31,6 +32,15 @@ pub fn run() {
             commands::compression::clear_completed,
             commands::compression::remove_task,
             commands::compression::retry_failed,
+            commands::image::probe_images,
+            commands::image::add_image_tasks,
+            commands::image::run_image_compression,
+            commands::image::cancel_image_task,
+            commands::image::cancel_all_images,
+            commands::image::get_image_tasks,
+            commands::image::clear_completed_images,
+            commands::image::remove_image_task,
+            commands::image::retry_failed_images,
         ])
         .setup(|app| {
             let handle = app.handle();
@@ -81,6 +91,7 @@ pub fn run() {
             if let tauri::WindowEvent::CloseRequested { .. } = event {
                 let state = window.state::<AppState>();
                 state.task_manager.shutdown();
+                state.image_task_manager.shutdown();
             }
         })
         .run(tauri::generate_context!())

@@ -11,7 +11,7 @@ export function HardwareToggle() {
   const hasHardware = !!hwEncoder;
 
   return (
-    <div className="settings-row flex items-center justify-between rounded-t-[10px] px-4 py-3">
+    <div className="settings-row flex items-center justify-between px-4 py-3">
       <div className="flex flex-col gap-0.5">
         <span className="text-[14px]">{t("settings.hardware.title")}</span>
         <span className="text-[11px] text-muted-foreground">
@@ -21,6 +21,9 @@ export function HardwareToggle() {
         </span>
       </div>
       <button
+        role="switch"
+        aria-checked={config.useHardware && hasHardware}
+        aria-label={t("settings.hardware.title")}
         onClick={() => setUseHardware(!config.useHardware)}
         disabled={!hasHardware}
         className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${

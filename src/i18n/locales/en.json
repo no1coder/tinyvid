@@ -5,13 +5,14 @@
   },
   "nav": {
     "compressor": "Compressor",
+    "images": "Images",
     "tasks": "Tasks",
     "settings": "Settings"
   },
   "dropzone": {
-    "title": "Drop videos to compress",
-    "subtitle": "Supports MP4, MOV, WebM and more",
-    "dragging": "Release to add videos",
+    "title": "Drop files to compress",
+    "subtitle": "Supports videos (MP4, MOV, WebM) and images (JPEG, PNG, WebP)",
+    "dragging": "Release to add files",
     "browse": "Browse Files",
     "browseFolder": "Browse Folder",
     "addMore": "Add Files"
@@ -23,8 +24,27 @@
     "title": "Settings",
     "compressionQuality": "Compression Quality",
     "preferences": "Preferences",
+    "quickPresets": "Quick Presets",
+    "preset": {
+      "social": "Social Share",
+      "socialDesc": "WeChat, TikTok, etc.",
+      "balanced": "Balanced",
+      "balancedDesc": "Quality & size balance",
+      "archive": "Archive",
+      "archiveDesc": "Maximum quality"
+    },
+    "mode": {
+      "basic": "Basic",
+      "professional": "Professional"
+    },
     "codec": "Codec",
-    "quality": "Quality (CRF)",
+    "quality": "Quality",
+    "qualityPreset": {
+      "lossless": "Lossless",
+      "high": "High",
+      "balanced": "Balanced",
+      "compact": "Compact"
+    },
     "qualityHint": {
       "low": "Smaller file",
       "high": "Higher quality"
@@ -50,6 +70,22 @@
     "concurrency": {
       "title": "Parallel Tasks",
       "auto": "Auto"
+    },
+    "format": {
+      "title": "Output Format"
+    },
+    "fps": {
+      "title": "Frame Rate",
+      "original": "Original",
+      "30": "30 fps",
+      "24": "24 fps"
+    },
+    "filename": {
+      "title": "Filename Pattern",
+      "compressed": "Original + _compressed",
+      "date": "Original + date",
+      "detailed": "Original + codec + resolution",
+      "preview": "Preview: {{name}}"
     }
   },
   "task": {
@@ -102,6 +138,78 @@
     "insufficientDisk": "Not enough disk space. Available: {{available}}, Required: {{required}}.",
     "tightDisk": "Disk space is low ({{available}} available). Compression may fail.",
     "dismiss": "Dismiss",
-    "alreadyCompressed": "{{count}} file(s) appear already compressed and were skipped."
+    "alreadyCompressed": "{{count}} file(s) appear already compressed and were skipped.",
+    "unsupportedFiles": "{{count}} unsupported file(s) were skipped.",
+    "probeFailed": "Failed to read files: {{error}}"
+  },
+  "status": {
+    "ready": "Ready",
+    "done": "Done",
+    "failed": "Failed",
+    "cancelled": "Cancelled",
+    "running": "Running",
+    "pending": "Pending"
+  },
+  "mediaType": {
+    "video": "Video",
+    "image": "Image"
+  },
+  "errorBoundary": {
+    "title": "Something went wrong",
+    "description": "An unexpected error occurred",
+    "reload": "Reload App",
+    "copyError": "Copy Error"
+  },
+  "image": {
+    "dropzone": {
+      "title": "Drop images to compress",
+      "subtitle": "Supports JPEG, PNG, WebP and more",
+      "dragging": "Release to add images",
+      "browse": "Browse Images",
+      "addMore": "Add Images"
+    },
+    "settings": {
+      "title": "Compression Settings",
+      "mode": "Mode",
+      "lossless": "Lossless",
+      "lossy": "Lossy",
+      "quality": "Quality",
+      "qualitySmaller": "Smaller file",
+      "qualityBetter": "Better quality",
+      "outputFormat": "Output Format",
+      "formatSame": "Original",
+      "filename": "Filename",
+      "filenameCompressed": "Original + _compressed",
+      "filenameDate": "Original + date",
+      "outputDir": "Output Directory",
+      "sameAsInput": "Same as input",
+      "resetDir": "Reset to default",
+      "keepMetadata": "Keep EXIF"
+    },
+    "task": {
+      "start": "Compress Images"
+    },
+    "status": {
+      "pending": "Waiting...",
+      "failed": "Failed",
+      "cancelled": "Cancelled"
+    },
+    "stats": {
+      "compressing": "Compressing {{current}} of {{total}} images...",
+      "successCount": "{{count}} images compressed",
+      "totalSaved": "Saved {{size}}",
+      "saved": "saved"
+    },
+    "notification": {
+      "allCompleted": "Image Compression Complete",
+      "completedBody": "{{count}} images compressed successfully.",
+      "completedWithErrors": "Image Compression Finished",
+      "completedWithErrorsBody": "{{completed}} succeeded, {{failed}} failed."
+    },
+    "error": {
+      "unsupportedSkipped": "{{count}} unsupported file(s) were skipped.",
+      "probeFailed": "Failed to read images: {{error}}",
+      "compressionFailed": "Image compression failed: {{error}}"
+    }
   }
 }

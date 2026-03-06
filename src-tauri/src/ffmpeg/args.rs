@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use super::encoder::EncoderInfo;
 use super::quality::{add_audio_args, add_hwaccel_args, add_quality_args, add_resolution_args};
+use crate::utils::error::AppError;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -15,6 +16,20 @@ pub struct CompressionConfig {
     pub output_dir: Option<String>, // Custom output directory (None = same as input)
     #[serde(default)]
     pub max_concurrency: Option<usize>, // Custom parallel limit (None = auto)
+    #[serde(default = "default_output_format")]
+    pub output_format: String, // "mp4" or "mkv"
+    #[serde(default = "default_filename_template")]
+    pub filename_template: String, // e.g. "{name}_compressed"
+    #[serde(default)]
+    pub fps: Option<String>, // None = original, "30" or "24"
+}
+
+fn default_output_format() -> String {
+    "mp4".into()
+}
+
+fn default_filename_template() -> String {
+    "{name}_compressed".into()
 }
 
 impl Default for CompressionConfig {
@@ -27,8 +42,58 @@ impl Default for CompressionConfig {
             audio_bitrate: "copy".into(),
             output_dir: None,
             max_concurrency: None,
+            output_format: default_output_format(),
+            filename_template: default_filename_template(),
+            fps: None,
         }
     }
+}
+
+// Allowed values for config fields (whitelist validation)
+const VALID_CODECS: &[&str] = &["h265", "h264"];
+const VALID_RESOLUTIONS: &[&str] = &["original", "1080p", "720p", "480p"];
+const VALID_AUDIO_BITRATES: &[&str] = &["copy", "320k", "256k", "128k", "96k"];
+const VALID_OUTPUT_FORMATS: &[&str] = &["mp4", "mkv"];
+const VALID_FPS: &[&str] = &["24", "30"];
+const CRF_MIN: u32 = 0;
+const CRF_MAX: u32 = 51;
+
+/// Validate config fields against allowed whitelists.
+/// Returns an error if any field contains an unexpected value.
+pub fn validate_config(config: &CompressionConfig) -> Result<(), AppError> {
+    if !VALID_CODECS.contains(&config.codec.as_str()) {
+        return Err(AppError::InvalidFile(format!(
+            "Invalid codec: '{}'. Allowed: {:?}", config.codec, VALID_CODECS
+        )));
+    }
+    if config.crf > CRF_MAX {
+        return Err(AppError::InvalidFile(format!(
+            "CRF {} out of range ({}..={})", config.crf, CRF_MIN, CRF_MAX
+        )));
+    }
+    if !VALID_RESOLUTIONS.contains(&config.resolution.as_str()) {
+        return Err(AppError::InvalidFile(format!(
+            "Invalid resolution: '{}'. Allowed: {:?}", config.resolution, VALID_RESOLUTIONS
+        )));
+    }
+    if !VALID_AUDIO_BITRATES.contains(&config.audio_bitrate.as_str()) {
+        return Err(AppError::InvalidFile(format!(
+            "Invalid audio bitrate: '{}'. Allowed: {:?}", config.audio_bitrate, VALID_AUDIO_BITRATES
+        )));
+    }
+    if !VALID_OUTPUT_FORMATS.contains(&config.output_format.as_str()) {
+        return Err(AppError::InvalidFile(format!(
+            "Invalid output format: '{}'. Allowed: {:?}", config.output_format, VALID_OUTPUT_FORMATS
+        )));
+    }
+    if let Some(ref fps) = config.fps {
+        if !VALID_FPS.contains(&fps.as_str()) {
+            return Err(AppError::InvalidFile(format!(
+                "Invalid fps: '{}'. Allowed: {:?}", fps, VALID_FPS
+            )));
+        }
+    }
+    Ok(())
 }
 
 /// Build FFmpeg command-line arguments from config and encoder info
@@ -65,8 +130,8 @@ pub fn build_args(
         args.push("yuv420p".into());
     }
 
-    // HEVC tag for Apple/browser compatibility
-    if config.codec == "h265" {
+    // HEVC tag for Apple/browser compatibility (MP4 only)
+    if config.codec == "h265" && config.output_format != "mkv" {
         args.push("-tag:v".into());
         args.push("hvc1".into());
     }
@@ -74,12 +139,20 @@ pub fn build_args(
     // Resolution scaling (use GPU filter when HW encoder is active)
     add_resolution_args(&mut args, &config.resolution, encoder);
 
+    // Frame rate adjustment (output option, compatible with all encoders including GPU)
+    if let Some(ref fps) = config.fps {
+        args.push("-r".into());
+        args.push(fps.clone());
+    }
+
     // Audio settings
     add_audio_args(&mut args, &config.audio_bitrate);
 
-    // Container format
-    args.push("-movflags".into());
-    args.push("+faststart".into());
+    // Container format (faststart only for MP4)
+    if config.output_format != "mkv" {
+        args.push("-movflags".into());
+        args.push("+faststart".into());
+    }
 
     // Progress output for parsing
     args.push("-progress".into());
@@ -112,9 +185,8 @@ pub fn select_encoder(
     }
 
     matching
-        .iter()
+        .into_iter()
         .find(|e| !e.is_hardware)
-        .cloned()
         .cloned()
         .unwrap_or_else(|| EncoderInfo {
             name: if codec == "h265" { "libx265".into() } else { "libx264".into() },
@@ -648,5 +720,159 @@ mod tests {
         assert!(args.contains(&"constqp".to_string()));
         // H.264 codec should NOT have hvc1 tag
         assert!(!args.contains(&"hvc1".to_string()));
+    }
+
+    // --- FPS tests ---
+
+    #[test]
+    fn test_build_args_fps_none_no_r_flag() {
+        let config = CompressionConfig::default(); // fps = None
+        let encoder = default_encoder();
+        let args = build_args("/input.mp4", "/output.mp4", &config, &encoder, 60.0);
+
+        assert!(!args.contains(&"-r".to_string()));
+    }
+
+    #[test]
+    fn test_build_args_fps_30() {
+        let config = CompressionConfig {
+            fps: Some("30".into()),
+            ..CompressionConfig::default()
+        };
+        let encoder = default_encoder();
+        let args = build_args("/input.mp4", "/output.mp4", &config, &encoder, 60.0);
+
+        let r_pos = args.iter().position(|a| a == "-r").unwrap();
+        assert_eq!(args[r_pos + 1], "30");
+    }
+
+    #[test]
+    fn test_build_args_fps_24() {
+        let config = CompressionConfig {
+            fps: Some("24".into()),
+            ..CompressionConfig::default()
+        };
+        let encoder = default_encoder();
+        let args = build_args("/input.mp4", "/output.mp4", &config, &encoder, 60.0);
+
+        let r_pos = args.iter().position(|a| a == "-r").unwrap();
+        assert_eq!(args[r_pos + 1], "24");
+    }
+
+    #[test]
+    fn test_build_args_fps_with_hw_encoder() {
+        let config = CompressionConfig {
+            fps: Some("30".into()),
+            ..CompressionConfig::default()
+        };
+        let encoder = vt_encoder();
+        let args = build_args("/input.mp4", "/output.mp4", &config, &encoder, 60.0);
+
+        // -r should work with all encoders
+        assert!(args.contains(&"-r".to_string()));
+        assert!(args.contains(&"30".to_string()));
+    }
+
+    #[test]
+    fn test_build_args_fps_after_resolution() {
+        let config = CompressionConfig {
+            fps: Some("24".into()),
+            resolution: "720p".into(),
+            ..CompressionConfig::default()
+        };
+        let encoder = default_encoder();
+        let args = build_args("/input.mp4", "/output.mp4", &config, &encoder, 60.0);
+
+        // Both -vf (scale) and -r (fps) should be present
+        assert!(args.contains(&"-vf".to_string()));
+        assert!(args.contains(&"scale=-2:720".to_string()));
+        let r_pos = args.iter().position(|a| a == "-r").unwrap();
+        let vf_pos = args.iter().position(|a| a == "-vf").unwrap();
+        // -r should come after -vf
+        assert!(r_pos > vf_pos);
+    }
+
+    // --- MKV format tests ---
+
+    #[test]
+    fn test_build_args_mkv_no_faststart() {
+        let config = CompressionConfig {
+            output_format: "mkv".into(),
+            ..CompressionConfig::default()
+        };
+        let encoder = default_encoder();
+        let args = build_args("/input.mp4", "/output.mkv", &config, &encoder, 60.0);
+
+        assert!(!args.contains(&"-movflags".to_string()));
+        assert!(!args.contains(&"+faststart".to_string()));
+    }
+
+    #[test]
+    fn test_build_args_mkv_no_hvc1_tag() {
+        let config = CompressionConfig {
+            codec: "h265".into(),
+            output_format: "mkv".into(),
+            ..CompressionConfig::default()
+        };
+        let encoder = default_encoder();
+        let args = build_args("/input.mp4", "/output.mkv", &config, &encoder, 60.0);
+
+        assert!(!args.contains(&"-tag:v".to_string()));
+        assert!(!args.contains(&"hvc1".to_string()));
+    }
+
+    // --- validate_config tests ---
+
+    #[test]
+    fn test_validate_config_default_ok() {
+        assert!(validate_config(&CompressionConfig::default()).is_ok());
+    }
+
+    #[test]
+    fn test_validate_config_invalid_codec() {
+        let config = CompressionConfig { codec: "vp9".into(), ..CompressionConfig::default() };
+        assert!(validate_config(&config).is_err());
+    }
+
+    #[test]
+    fn test_validate_config_invalid_resolution() {
+        let config = CompressionConfig { resolution: "4k".into(), ..CompressionConfig::default() };
+        assert!(validate_config(&config).is_err());
+    }
+
+    #[test]
+    fn test_validate_config_invalid_audio() {
+        let config = CompressionConfig { audio_bitrate: "999k".into(), ..CompressionConfig::default() };
+        assert!(validate_config(&config).is_err());
+    }
+
+    #[test]
+    fn test_validate_config_invalid_format() {
+        let config = CompressionConfig { output_format: "avi".into(), ..CompressionConfig::default() };
+        assert!(validate_config(&config).is_err());
+    }
+
+    #[test]
+    fn test_validate_config_invalid_fps() {
+        let config = CompressionConfig { fps: Some("60".into()), ..CompressionConfig::default() };
+        assert!(validate_config(&config).is_err());
+    }
+
+    #[test]
+    fn test_validate_config_valid_fps() {
+        let config = CompressionConfig { fps: Some("30".into()), ..CompressionConfig::default() };
+        assert!(validate_config(&config).is_ok());
+    }
+
+    #[test]
+    fn test_validate_config_crf_too_high() {
+        let config = CompressionConfig { crf: 99, ..CompressionConfig::default() };
+        assert!(validate_config(&config).is_err());
+    }
+
+    #[test]
+    fn test_validate_config_crf_boundary() {
+        let config = CompressionConfig { crf: 51, ..CompressionConfig::default() };
+        assert!(validate_config(&config).is_ok());
     }
 }

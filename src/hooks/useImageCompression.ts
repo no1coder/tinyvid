@@ -1,31 +1,28 @@
 import { useState, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  startCompression,
-  cancelAll as cancelAllTauri,
-  cancelTask as cancelTaskTauri,
-  clearCompleted as clearCompletedTauri,
-  retryFailed as retryFailedTauri,
+  addImageTasks,
+  runImageCompression,
+  cancelAllImages,
+  cancelImageTask as cancelImageTaskTauri,
+  clearCompletedImages as clearCompletedImagesTauri,
+  retryFailedImages as retryFailedImagesTauri,
   showInFolder as showInFolderTauri,
 } from "@/lib/tauri";
-import { useTaskStore } from "@/stores/taskStore";
-import { useSettingsStore } from "@/stores/settingsStore";
+import { useImageStore } from "@/stores/imageStore";
 import { useAppStore } from "@/stores/appStore";
 import { useNotification } from "@/hooks/useNotification";
-import { useDiskCheck } from "@/hooks/useDiskCheck";
 import type { ProgressEvent } from "@/types";
 
-export function useCompression() {
+export function useImageCompression() {
   const { t } = useTranslation();
   const [isCompressing, setIsCompressing] = useState(false);
-  const { diskWarning, checkDisk, dismissDiskWarning } = useDiskCheck();
   const totalTasksRef = useRef(0);
   const doneCountRef = useRef(0);
   const completedCountRef = useRef(0);
   const failedCountRef = useRef(0);
-  const { videos, setTasks, handleProgressEvent, clearCompletedTasks } =
-    useTaskStore();
-  const { config } = useSettingsStore();
+  const { images, config, setTasks, handleProgressEvent, clearCompletedTasks } =
+    useImageStore();
   const { notify } = useNotification();
   const { addToast } = useAppStore();
 
@@ -42,18 +39,17 @@ export function useCompression() {
         doneCountRef.current += 1;
         if (doneCountRef.current >= totalTasksRef.current) {
           setIsCompressing(false);
-          // Send completion notification
           const completed = completedCountRef.current;
           const failed = failedCountRef.current;
           if (completed > 0 || failed > 0) {
             const title =
               failed === 0
-                ? t("notification.allCompleted")
-                : t("notification.completedWithErrors");
+                ? t("image.notification.allCompleted")
+                : t("image.notification.completedWithErrors");
             const body =
               failed === 0
-                ? t("notification.completedBody", { count: completed })
-                : t("notification.completedWithErrorsBody", {
+                ? t("image.notification.completedBody", { count: completed })
+                : t("image.notification.completedWithErrorsBody", {
                     completed,
                     failed,
                   });
@@ -66,10 +62,7 @@ export function useCompression() {
   );
 
   const start = useCallback(async () => {
-    if (videos.length === 0) return;
-
-    const canProceed = await checkDisk(videos, config.outputDir);
-    if (!canProceed) return;
+    if (images.length === 0) return;
 
     setIsCompressing(true);
     doneCountRef.current = 0;
@@ -78,14 +71,18 @@ export function useCompression() {
     failedCountRef.current = 0;
 
     try {
-      const newTasks = await startCompression(videos, config, handleProgress);
+      const newTasks = await addImageTasks(images, config);
       totalTasksRef.current = newTasks.length;
       setTasks(newTasks);
+      await runImageCompression(config, handleProgress);
     } catch (err) {
-      addToast({ type: "error", message: t("error.compressionFailed", { error: String(err) }) });
+      addToast({
+        type: "error",
+        message: t("image.error.compressionFailed", { error: String(err) }),
+      });
       setIsCompressing(false);
     }
-  }, [videos, config, setTasks, handleProgress, checkDisk, t, addToast]);
+  }, [images, config, setTasks, handleProgress, t, addToast]);
 
   const retryFailed = useCallback(async () => {
     setIsCompressing(true);
@@ -95,38 +92,41 @@ export function useCompression() {
     failedCountRef.current = 0;
 
     try {
-      const retriedTasks = await retryFailedTauri(config, handleProgress);
+      const retriedTasks = await retryFailedImagesTauri();
       if (retriedTasks.length === 0) {
         setIsCompressing(false);
         return;
       }
       totalTasksRef.current = retriedTasks.length;
-      // Update task store: mark retried tasks as pending
-      const currentTasks = useTaskStore.getState().tasks;
+      const currentTasks = useImageStore.getState().tasks;
       const retriedIds = new Set(retriedTasks.map((rt) => rt.id));
       const updatedTasks = currentTasks.map((t) =>
         retriedIds.has(t.id)
           ? { ...t, status: "pending" as const, progress: 0, error: null }
           : t,
       );
-      useTaskStore.setState({ tasks: updatedTasks });
+      useImageStore.setState({ tasks: updatedTasks });
+      await runImageCompression(config, handleProgress);
     } catch (err) {
       addToast({ type: "error", message: String(err) });
       setIsCompressing(false);
     }
   }, [config, handleProgress, addToast]);
 
-  const cancelTask = useCallback(async (taskId: string) => {
-    try {
-      await cancelTaskTauri(taskId);
-    } catch (err) {
-      addToast({ type: "error", message: String(err) });
-    }
-  }, [addToast]);
+  const cancelTask = useCallback(
+    async (taskId: string) => {
+      try {
+        await cancelImageTaskTauri(taskId);
+      } catch (err) {
+        addToast({ type: "error", message: String(err) });
+      }
+    },
+    [addToast],
+  );
 
   const cancelAll = useCallback(async () => {
     try {
-      await cancelAllTauri();
+      await cancelAllImages();
     } catch (err) {
       addToast({ type: "error", message: String(err) });
     }
@@ -135,30 +135,31 @@ export function useCompression() {
 
   const clearCompleted = useCallback(async () => {
     try {
-      await clearCompletedTauri();
+      await clearCompletedImagesTauri();
     } catch (err) {
       addToast({ type: "error", message: String(err) });
     }
     clearCompletedTasks();
   }, [clearCompletedTasks, addToast]);
 
-  const showInFolder = useCallback(async (path: string) => {
-    try {
-      await showInFolderTauri(path);
-    } catch (err) {
-      addToast({ type: "error", message: String(err) });
-    }
-  }, [addToast]);
+  const showInFolder = useCallback(
+    async (path: string) => {
+      try {
+        await showInFolderTauri(path);
+      } catch (err) {
+        addToast({ type: "error", message: String(err) });
+      }
+    },
+    [addToast],
+  );
 
   return {
     isCompressing,
-    diskWarning,
     start,
     retryFailed,
     cancelTask,
     cancelAll,
     clearCompleted,
     showInFolder,
-    dismissDiskWarning,
   };
 }

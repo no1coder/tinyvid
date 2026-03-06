@@ -1,6 +1,6 @@
 [package]
 name = "tinyvid"
-version = "0.1.0"
+version = "0.2.0"
 description = "A cross-platform video batch compression tool"
 authors = ["jackie"]
 edition = "2021"
@@ -24,6 +24,9 @@ thiserror = "2"
 regex = "1"
 log = "0.4"
 num_cpus = "1"
+chrono = "0.4"
+libcaesium = "0.20"
+imagesize = "0.13"
 
 [target.'cfg(unix)'.dependencies]
 libc = "0.2"

@@ -2,6 +2,7 @@ use std::path::PathBuf;
 use std::sync::Mutex;
 
 use crate::ffmpeg::encoder::EncoderInfo;
+use crate::image::manager::ImageTaskManager;
 use crate::task::manager::TaskManager;
 
 pub struct AppState {
@@ -9,6 +10,7 @@ pub struct AppState {
     pub ffprobe_path: Mutex<Option<PathBuf>>,
     pub encoders: Mutex<Vec<EncoderInfo>>,
     pub task_manager: TaskManager,
+    pub image_task_manager: ImageTaskManager,
 }
 
 impl AppState {
@@ -18,6 +20,7 @@ impl AppState {
             ffprobe_path: Mutex::new(None),
             encoders: Mutex::new(Vec::new()),
             task_manager: TaskManager::new(),
+            image_task_manager: ImageTaskManager::new(),
         }
     }
 }

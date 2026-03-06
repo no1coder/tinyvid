@@ -25,7 +25,14 @@ pub fn run_task(
 ) -> Result<(String, u64), AppError> {
     let encoder = select_encoder(encoders, &config.codec, config.use_hardware);
     let input_path = &video.path;
-    let output_path = generate_output_path(Path::new(input_path), config.output_dir.as_deref());
+    let output_path = generate_output_path(
+        Path::new(input_path),
+        config.output_dir.as_deref(),
+        &config.output_format,
+        &config.filename_template,
+        &config.codec,
+        &config.resolution,
+    );
     let output_str = output_path.to_string_lossy().to_string();
 
     let result = try_encode(
@@ -96,9 +103,16 @@ fn try_encode(
 
     if !success {
         let _ = std::fs::remove_file(output_path);
-        return Err(AppError::FfmpegError(format!(
-            "Encoder '{}' exited with error", encoder.name
-        )));
+        let stderr_info = process.stderr_output();
+        let detail = if stderr_info.is_empty() {
+            format!("Encoder '{}' exited with error", encoder.name)
+        } else {
+            // Take last 3 lines for concise error message
+            let last_lines: Vec<&str> = stderr_info.lines().rev().take(3).collect();
+            let last_lines: Vec<&str> = last_lines.into_iter().rev().collect();
+            format!("Encoder '{}' failed: {}", encoder.name, last_lines.join(" | "))
+        };
+        return Err(AppError::FfmpegError(detail));
     }
 
     let output_size = match std::fs::metadata(output_path) {

@@ -5,13 +5,14 @@
   },
   "nav": {
     "compressor": "压缩器",
+    "images": "图片",
     "tasks": "任务",
     "settings": "设置"
   },
   "dropzone": {
-    "title": "拖放视频进行压缩",
-    "subtitle": "支持 MP4、MOV、WebM 等格式",
-    "dragging": "松开以添加视频",
+    "title": "拖放文件进行压缩",
+    "subtitle": "支持视频（MP4、MOV、WebM）和图片（JPEG、PNG、WebP）",
+    "dragging": "松开以添加文件",
     "browse": "浏览文件",
     "browseFolder": "浏览文件夹",
     "addMore": "添加文件"
@@ -23,8 +24,27 @@
     "title": "设置",
     "compressionQuality": "压缩质量",
     "preferences": "偏好设置",
+    "quickPresets": "快速预设",
+    "preset": {
+      "social": "社交分享",
+      "socialDesc": "微信、抖音等平台",
+      "balanced": "均衡压缩",
+      "balancedDesc": "画质与体积平衡",
+      "archive": "无损存档",
+      "archiveDesc": "最大程度保留画质"
+    },
+    "mode": {
+      "basic": "基础",
+      "professional": "专业"
+    },
     "codec": "编码器",
-    "quality": "质量 (CRF)",
+    "quality": "画质",
+    "qualityPreset": {
+      "lossless": "极致画质",
+      "high": "高清",
+      "balanced": "均衡",
+      "compact": "极致压缩"
+    },
     "qualityHint": {
       "low": "文件更小",
       "high": "质量更高"
@@ -50,6 +70,22 @@
     "concurrency": {
       "title": "并行任务数",
       "auto": "自动"
+    },
+    "format": {
+      "title": "输出格式"
+    },
+    "fps": {
+      "title": "帧率",
+      "original": "保持原始",
+      "30": "30 帧",
+      "24": "24 帧"
+    },
+    "filename": {
+      "title": "文件命名",
+      "compressed": "原名 + _compressed",
+      "date": "原名 + 日期",
+      "detailed": "原名 + 编码器 + 分辨率",
+      "preview": "预览: {{name}}"
     }
   },
   "task": {
@@ -102,6 +138,78 @@
     "insufficientDisk": "磁盘空间不足。可用: {{available}}，需要: {{required}}。",
     "tightDisk": "磁盘空间紧张（可用 {{available}}），压缩可能失败。",
     "dismiss": "忽略",
-    "alreadyCompressed": "{{count}} 个文件似乎已经压缩过，已自动跳过。"
+    "alreadyCompressed": "{{count}} 个文件似乎已经压缩过，已自动跳过。",
+    "unsupportedFiles": "{{count}} 个不支持的文件已跳过。",
+    "probeFailed": "读取文件失败: {{error}}"
+  },
+  "status": {
+    "ready": "就绪",
+    "done": "完成",
+    "failed": "失败",
+    "cancelled": "已取消",
+    "running": "运行中",
+    "pending": "等待中"
+  },
+  "mediaType": {
+    "video": "视频",
+    "image": "图片"
+  },
+  "errorBoundary": {
+    "title": "出现错误",
+    "description": "发生了意外错误",
+    "reload": "重新加载",
+    "copyError": "复制错误"
+  },
+  "image": {
+    "dropzone": {
+      "title": "拖放图片进行压缩",
+      "subtitle": "支持 JPEG、PNG、WebP 等格式",
+      "dragging": "松开以添加图片",
+      "browse": "浏览图片",
+      "addMore": "添加图片"
+    },
+    "settings": {
+      "title": "压缩设置",
+      "mode": "模式",
+      "lossless": "无损",
+      "lossy": "有损",
+      "quality": "画质",
+      "qualitySmaller": "文件更小",
+      "qualityBetter": "画质更好",
+      "outputFormat": "输出格式",
+      "formatSame": "保持原格式",
+      "filename": "文件命名",
+      "filenameCompressed": "原名 + _compressed",
+      "filenameDate": "原名 + 日期",
+      "outputDir": "输出目录",
+      "sameAsInput": "与源文件相同",
+      "resetDir": "恢复默认",
+      "keepMetadata": "保留 EXIF"
+    },
+    "task": {
+      "start": "开始压缩"
+    },
+    "status": {
+      "pending": "等待中...",
+      "failed": "失败",
+      "cancelled": "已取消"
+    },
+    "stats": {
+      "compressing": "正在压缩第 {{current}}/{{total}} 张图片...",
+      "successCount": "成功压缩 {{count}} 张图片",
+      "totalSaved": "节省 {{size}}",
+      "saved": "节省"
+    },
+    "notification": {
+      "allCompleted": "图片压缩完成",
+      "completedBody": "{{count}} 张图片压缩成功。",
+      "completedWithErrors": "图片压缩结束",
+      "completedWithErrorsBody": "{{completed}} 张成功，{{failed}} 张失败。"
+    },
+    "error": {
+      "unsupportedSkipped": "{{count}} 个不支持的文件已跳过。",
+      "probeFailed": "读取图片失败: {{error}}",
+      "compressionFailed": "图片压缩失败: {{error}}"
+    }
   }
 }

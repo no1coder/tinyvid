@@ -1,16 +1,18 @@
-import { useMemo } from "react";
+import { useMemo, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { Play, XCircle, Trash2, RotateCcw, AlertTriangle, X, Plus } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { DropZone } from "@/components/import/DropZone";
-import { FileTable } from "@/components/import/FileTable";
+import { UnifiedFileTable } from "@/components/import/UnifiedFileTable";
 import { StatsBar } from "@/components/task/StatsBar";
 import { SettingsPage } from "@/components/settings/SettingsPage";
 import { TaskHistoryPage } from "@/components/task/TaskHistoryPage";
 import { useAppStore } from "@/stores/appStore";
 import { useTaskStore } from "@/stores/taskStore";
-import { useFileImport } from "@/hooks/useFileImport";
-import { useCompression } from "@/hooks/useCompression";
+import { useImageStore } from "@/stores/imageStore";
+import { useUnifiedStore, useUnifiedItems, useUnifiedTasks } from "@/stores/unifiedStore";
+import { useUnifiedImport } from "@/hooks/useUnifiedImport";
+import { useUnifiedCompression } from "@/hooks/useUnifiedCompression";
 import { useHardwareInfo } from "@/hooks/useHardwareInfo";
 import { useEstimation } from "@/hooks/useEstimation";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
@@ -19,10 +21,11 @@ import { useUpdateCheck } from "@/hooks/useUpdateCheck";
 type Phase = "empty" | "ready" | "running" | "done";
 
 function usePhase(): Phase {
-  const { videos, tasks } = useTaskStore();
+  const items = useUnifiedItems();
+  const tasks = useUnifiedTasks();
 
   return useMemo(() => {
-    if (videos.length === 0 && tasks.length === 0) return "empty";
+    if (items.length === 0 && tasks.length === 0) return "empty";
     if (tasks.length === 0) return "ready";
 
     const hasActive = tasks.some(
@@ -31,14 +34,18 @@ function usePhase(): Phase {
     if (hasActive) return "running";
 
     return "done";
-  }, [videos, tasks]);
+  }, [items, tasks]);
 }
 
 function CompressorPage() {
   const { t } = useTranslation();
   const phase = usePhase();
-  const { videos, tasks, removeVideo, clearVideos } = useTaskStore();
-  const { importFiles, isProbing } = useFileImport();
+  const items = useUnifiedItems();
+  const tasks = useUnifiedTasks();
+  const { removeVideo, clearVideos } = useTaskStore();
+  const { removeImage, clearImages } = useImageStore();
+  const { removeFromOrder, clearOrder } = useUnifiedStore();
+  const { importFiles, isProbing } = useUnifiedImport();
   const {
     isCompressing,
     start,
@@ -49,8 +56,27 @@ function CompressorPage() {
     showInFolder,
     diskWarning,
     dismissDiskWarning,
-  } = useCompression();
+  } = useUnifiedCompression();
   const hasFailed = tasks.some((t) => t.status === "failed");
+
+  const clearAll = useCallback(() => {
+    clearVideos();
+    clearImages();
+    clearOrder();
+  }, [clearVideos, clearImages, clearOrder]);
+
+  const removeItem = useCallback(
+    (path: string) => {
+      const item = items.find((i) => i.path === path);
+      if (item?.type === "video") {
+        removeVideo(path);
+      } else {
+        removeImage(path);
+      }
+      removeFromOrder(path);
+    },
+    [items, removeVideo, removeImage, removeFromOrder],
+  );
 
   const shortcuts = useMemo(() => {
     const map: Record<string, () => void> = {};
@@ -58,8 +84,8 @@ function CompressorPage() {
     if (phase === "ready") {
       map["space"] = start;
       map["enter"] = start;
-      map["delete"] = clearVideos;
-      map["backspace"] = clearVideos;
+      map["delete"] = clearAll;
+      map["backspace"] = clearAll;
     }
 
     if (phase === "running") {
@@ -72,12 +98,12 @@ function CompressorPage() {
       }
       map["n"] = () => {
         clearCompleted();
-        clearVideos();
+        clearAll();
       };
     }
 
     return map;
-  }, [phase, hasFailed, start, clearVideos, cancelAll, retryFailed, clearCompleted]);
+  }, [phase, hasFailed, start, clearAll, cancelAll, retryFailed, clearCompleted]);
 
   useKeyboardShortcuts(shortcuts);
 
@@ -104,6 +130,7 @@ function CompressorPage() {
             onFilesSelected={importFiles}
             disabled={isProbing}
             mode="full"
+            accept="all"
           />
         </div>
       )}
@@ -111,16 +138,17 @@ function CompressorPage() {
       {/* Phase: ready — File list + actions */}
       {phase === "ready" && (
         <div className="flex flex-1 animate-fade-in flex-col overflow-hidden">
-          {/* Toolbar — design: height 40, space-between */}
+          {/* Toolbar */}
           <div className="mb-4 flex h-10 items-center justify-between">
             <DropZone
               onFilesSelected={importFiles}
               disabled={isProbing}
               mode="compact"
+              accept="all"
             />
             <div className="flex items-center gap-2">
               <button
-                onClick={clearVideos}
+                onClick={clearAll}
                 className="clear-btn flex items-center gap-1.5 rounded-md px-3 py-2 text-[12px] font-medium transition-all"
               >
                 <Trash2 size={14} />
@@ -128,7 +156,7 @@ function CompressorPage() {
               </button>
               <button
                 onClick={start}
-                disabled={videos.length === 0 || isCompressing}
+                disabled={items.length === 0 || isCompressing}
                 className="flex items-center gap-1.5 rounded-md bg-primary px-4 py-2 text-[12px] font-semibold text-primary-foreground transition-all hover:brightness-110 active:scale-[0.98] disabled:opacity-40"
                 style={{ boxShadow: "0 2px 8px rgba(10, 132, 255, 0.3)" }}
               >
@@ -140,11 +168,11 @@ function CompressorPage() {
 
           {/* File list */}
           <div className="flex-1 overflow-auto">
-            <FileTable
-              videos={videos}
+            <UnifiedFileTable
+              items={items}
               tasks={tasks}
               phase="ready"
-              onRemoveVideo={removeVideo}
+              onRemoveItem={removeItem}
               onCancelTask={cancelTask}
               onShowInFolder={showInFolder}
             />
@@ -157,7 +185,7 @@ function CompressorPage() {
         <div className="flex flex-1 animate-fade-in flex-col overflow-hidden">
           {/* Toolbar */}
           <div className="mb-4 flex h-10 items-center justify-between">
-            <StatsBar tasks={tasks} videos={videos} phase="running" />
+            <StatsBar tasks={tasks} items={items} phase="running" />
             <button
               onClick={cancelAll}
               className="cancel-btn ml-4 flex shrink-0 items-center gap-1.5 rounded-md px-3 py-2 text-[12px] font-medium transition-all"
@@ -169,11 +197,11 @@ function CompressorPage() {
 
           {/* File list with progress */}
           <div className="flex-1 overflow-auto">
-            <FileTable
-              videos={videos}
+            <UnifiedFileTable
+              items={items}
               tasks={tasks}
               phase="running"
-              onRemoveVideo={removeVideo}
+              onRemoveItem={removeItem}
               onCancelTask={cancelTask}
               onShowInFolder={showInFolder}
             />
@@ -186,7 +214,7 @@ function CompressorPage() {
         <div className="flex flex-1 animate-fade-in flex-col overflow-hidden">
           {/* Stats summary */}
           <div className="mb-4 flex h-10 items-center justify-between">
-            <StatsBar tasks={tasks} videos={videos} phase="done" />
+            <StatsBar tasks={tasks} items={items} phase="done" />
             <div className="ml-4 flex shrink-0 items-center gap-2">
               {hasFailed && (
                 <button
@@ -207,7 +235,7 @@ function CompressorPage() {
               <button
                 onClick={() => {
                   clearCompleted();
-                  clearVideos();
+                  clearAll();
                 }}
                 className="flex items-center gap-1.5 rounded-md bg-primary px-4 py-2 text-[12px] font-semibold text-primary-foreground transition-all hover:brightness-110 active:scale-[0.98]"
                 style={{ boxShadow: "0 2px 8px rgba(10, 132, 255, 0.3)" }}
@@ -220,11 +248,11 @@ function CompressorPage() {
 
           {/* Results list */}
           <div className="flex-1 overflow-auto">
-            <FileTable
-              videos={videos}
+            <UnifiedFileTable
+              items={items}
               tasks={tasks}
               phase="done"
-              onRemoveVideo={removeVideo}
+              onRemoveItem={removeItem}
               onCancelTask={cancelTask}
               onShowInFolder={showInFolder}
             />

@@ -286,6 +286,9 @@ describe("taskStore", () => {
         audioBitrate: "copy",
         outputDir: null,
         maxConcurrency: null,
+        outputFormat: "mp4",
+        filenameTemplate: "{name}_compressed",
+        fps: null,
       };
       const encoders = [
         {
@@ -319,7 +322,10 @@ describe("taskStore", () => {
           resolution: "original",
           audioBitrate: "copy",
           outputDir: null,
-        maxConcurrency: null,
+          maxConcurrency: null,
+          outputFormat: "mp4",
+          filenameTemplate: "{name}_compressed",
+          fps: null,
         },
         [],
       );

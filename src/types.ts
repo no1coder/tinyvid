@@ -69,6 +69,9 @@ export interface CompressionConfig {
   audioBitrate: string;
   outputDir: string | null;
   maxConcurrency: number | null;
+  outputFormat: string;
+  filenameTemplate: string;
+  fps: string | null;
 }
 
 export interface EncoderInfo {
@@ -92,6 +95,45 @@ export interface UpdateInfo {
   currentVersion: string;
   releaseUrl: string;
   releaseNotes: string;
+}
+
+export interface ImageInfo {
+  path: string;
+  fileName: string;
+  size: number;
+  width: number;
+  height: number;
+  format: string;
+}
+
+export type ImageCompressionMode = "lossless" | "lossy";
+export type ImageOutputFormat = "same" | "jpeg" | "png" | "webp";
+
+export interface ImageCompressionConfig {
+  mode: ImageCompressionMode;
+  quality: number;
+  outputFormat: ImageOutputFormat;
+  outputDir: string | null;
+  filenameTemplate: string;
+  maxConcurrency: number | null;
+  keepMetadata: boolean;
+}
+
+// Unified file type for mixed video/image lists
+export type MediaType = "video" | "image";
+
+export interface UnifiedFileItem {
+  id: string;
+  type: MediaType;
+  path: string;
+  fileName: string;
+  size: number;
+  width: number;
+  height: number;
+  // Present when type === "video"
+  videoInfo?: VideoInfo;
+  // Present when type === "image"
+  imageInfo?: ImageInfo;
 }
 
 export type Theme = "light" | "dark" | "system";

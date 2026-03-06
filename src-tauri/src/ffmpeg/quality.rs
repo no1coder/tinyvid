@@ -114,14 +114,11 @@ pub fn add_quality_args(args: &mut Vec<String>, config: &CompressionConfig, enco
             args.push("-compression_level".into());
             args.push("1".into());
         }
-        // Software encoders: standard CRF
+        // Software encoders: standard CRF + preset
         _ => {
             args.push("-crf".into());
             args.push(config.crf.to_string());
-            if encoder.name == "libx265" {
-                args.push("-preset".into());
-                args.push("medium".into());
-            } else if encoder.name == "libx264" {
+            if encoder.name == "libx265" || encoder.name == "libx264" {
                 args.push("-preset".into());
                 args.push("medium".into());
             }

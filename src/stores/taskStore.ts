@@ -134,8 +134,7 @@ export const useTaskStore = create<TaskState>((set) => ({
 
   updateEstimations: (config, encoders) =>
     set((state) => {
-      const updatedVideos = state.videos; // videos don't change
-      // Also update tasks if they have matching input paths
+      // Update tasks if they have matching input paths
       const updatedTasks = state.tasks.map((task) => {
         const video = state.videos.find((v) => v.path === task.inputPath);
         if (!video || task.status !== "pending") return task;
@@ -146,6 +145,6 @@ export const useTaskStore = create<TaskState>((set) => ({
           estimatedTime: est.estimatedTime,
         };
       });
-      return { videos: updatedVideos, tasks: updatedTasks };
+      return { tasks: updatedTasks };
     }),
 }));

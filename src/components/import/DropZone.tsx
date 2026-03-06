@@ -1,56 +1,56 @@
-import { useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { Upload, Plus } from "lucide-react";
 import { open } from "@tauri-apps/plugin-dialog";
-import { SUPPORTED_FORMATS } from "@/lib/constants";
+import {
+  SUPPORTED_FORMATS,
+  SUPPORTED_IMAGE_FORMATS,
+  ALL_SUPPORTED_FORMATS,
+} from "@/lib/constants";
+import { useTauriDragDrop } from "@/hooks/useTauriDragDrop";
+
+type AcceptMode = "all" | "video" | "image";
 
 interface DropZoneProps {
   onFilesSelected: (paths: string[]) => void;
   disabled?: boolean;
   mode?: "full" | "compact";
+  accept?: AcceptMode;
+}
+
+function getDialogFilter(accept: AcceptMode) {
+  switch (accept) {
+    case "video":
+      return [{ name: "Video", extensions: [...SUPPORTED_FORMATS] }];
+    case "image":
+      return [{ name: "Images", extensions: [...SUPPORTED_IMAGE_FORMATS] }];
+    default:
+      return [{ name: "Media", extensions: [...ALL_SUPPORTED_FORMATS] }];
+  }
 }
 
 export function DropZone({
   onFilesSelected,
   disabled,
   mode = "full",
+  accept = "all",
 }: DropZoneProps) {
   const { t } = useTranslation();
-  const [isDragging, setIsDragging] = useState(false);
 
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  }, []);
-
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-  }, []);
-
-  const handleDrop = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault();
-      setIsDragging(false);
-      if (disabled) return;
-
-      const files = Array.from(e.dataTransfer.files);
-      const paths = files
-        .map((f) => (f as File & { path?: string }).path)
-        .filter((p): p is string => !!p);
-
-      if (paths.length > 0) {
+  // Use Tauri's native drag-drop event (works with system file manager)
+  const { isDragging } = useTauriDragDrop(
+    (paths) => {
+      if (!disabled) {
         onFilesSelected(paths);
       }
     },
-    [disabled, onFilesSelected],
+    !disabled,
   );
 
   const handleBrowseFiles = async () => {
     if (disabled) return;
     const result = await open({
       multiple: true,
-      filters: [{ name: "Video", extensions: [...SUPPORTED_FORMATS] }],
+      filters: getDialogFilter(accept),
     });
     if (result) {
       onFilesSelected(Array.isArray(result) ? result : [result]);
@@ -60,30 +60,30 @@ export function DropZone({
   // Compact mode: Add Files button matching design spec
   if (mode === "compact") {
     return (
-      <div
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
+      <button
+        onClick={handleBrowseFiles}
+        disabled={disabled}
+        className="compact-add-btn flex items-center gap-2 rounded-lg px-4 py-2 text-[13px] font-medium transition-all hover:brightness-125"
       >
-        <button
-          onClick={handleBrowseFiles}
-          disabled={disabled}
-          className="compact-add-btn flex items-center gap-2 rounded-lg px-4 py-2 text-[13px] font-medium transition-all hover:brightness-125"
-        >
-          <Plus size={16} />
-          {t("dropzone.addMore")}
-        </button>
-      </div>
+        <Plus size={16} />
+        {t("dropzone.addMore")}
+      </button>
     );
   }
 
   // Full mode: centered dropzone matching design exactly
   return (
     <div
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
+      role="button"
+      tabIndex={disabled ? -1 : 0}
       onClick={handleBrowseFiles}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          handleBrowseFiles();
+        }
+      }}
+      aria-label={t("dropzone.title")}
       className={`flex h-full w-full flex-col items-center justify-center rounded-[20px] transition-all ${
         isDragging ? "glass-dropzone-active" : "glass-dropzone"
       } ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}

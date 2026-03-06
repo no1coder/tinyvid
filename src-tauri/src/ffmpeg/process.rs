@@ -2,7 +2,7 @@ use std::path::Path;
 use std::process::{Child, Command, Stdio};
 use std::io::{BufRead, BufReader, Read};
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 const PROCESS_TIMEOUT: Duration = Duration::from_secs(3600); // 1 hour max
@@ -22,6 +22,7 @@ pub struct FfmpegProcess {
     child: Option<Child>,
     cancelled: Arc<AtomicBool>,
     finished: bool,
+    stderr_tail: Arc<Mutex<Vec<String>>>,
 }
 
 impl FfmpegProcess {
@@ -40,7 +41,7 @@ impl FfmpegProcess {
     ) -> Result<Self, AppError> {
         let args = build_args(input, output, config, encoder, duration_secs);
 
-        log::info!("FFmpeg args: {:?}", args);
+        log::debug!("FFmpeg args: {:?}", args);
 
         let mut child = Command::new(ffmpeg_path)
             .args(&args)
@@ -56,15 +57,26 @@ impl FfmpegProcess {
             AppError::FfmpegError("Failed to capture stdout".into())
         })?;
 
-        // Drain stderr in a background thread to prevent buffer deadlock.
-        // FFmpeg writes encoding info/warnings to stderr; if the pipe buffer
-        // fills up, the process blocks and the output file is truncated.
+        // Collect stderr tail in a background thread to prevent buffer deadlock
+        // and preserve last 20 lines for error diagnostics.
         let stderr = child.stderr.take();
+        let stderr_tail = Arc::new(Mutex::new(Vec::<String>::new()));
+        let stderr_tail_clone = stderr_tail.clone();
         std::thread::spawn(move || {
-            if let Some(mut stderr) = stderr {
-                let mut buf = Vec::new();
-                let _ = stderr.read_to_end(&mut buf);
-                // stderr content discarded; could be logged in the future
+            if let Some(stderr) = stderr {
+                let reader = BufReader::new(stderr);
+                let mut tail: Vec<String> = Vec::new();
+                for line in reader.lines() {
+                    if let Ok(line) = line {
+                        tail.push(line);
+                        if tail.len() > 20 {
+                            tail.remove(0);
+                        }
+                    }
+                }
+                if let Ok(mut lock) = stderr_tail_clone.lock() {
+                    *lock = tail;
+                }
             }
         });
 
@@ -84,7 +96,7 @@ impl FfmpegProcess {
             let start_time = std::time::Instant::now();
 
             for line in reader.lines() {
-                if cancelled_clone.load(Ordering::Relaxed) {
+                if cancelled_clone.load(Ordering::Acquire) {
                     let _ = channel_clone.send(ProgressEvent::Cancelled {
                         task_id: task_id_owned.clone(),
                     });
@@ -123,6 +135,7 @@ impl FfmpegProcess {
             child: Some(child),
             cancelled,
             finished: false,
+            stderr_tail,
         })
     }
 
@@ -161,7 +174,7 @@ impl FfmpegProcess {
 
     /// Cancel the FFmpeg process
     pub fn cancel(&mut self) {
-        self.cancelled.store(true, Ordering::Relaxed);
+        self.cancelled.store(true, Ordering::Release);
         if let Some(ref mut child) = self.child {
             #[cfg(unix)]
             {
@@ -178,7 +191,15 @@ impl FfmpegProcess {
 
     /// Check if process was cancelled
     pub fn is_cancelled(&self) -> bool {
-        self.cancelled.load(Ordering::Relaxed)
+        self.cancelled.load(Ordering::Acquire)
+    }
+
+    /// Get the last lines of stderr output (useful for error diagnostics)
+    pub fn stderr_output(&self) -> String {
+        self.stderr_tail
+            .lock()
+            .map(|lines| lines.join("\n"))
+            .unwrap_or_default()
     }
 }
 

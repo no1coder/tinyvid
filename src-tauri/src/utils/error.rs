@@ -22,6 +22,9 @@ pub enum AppError {
 
     #[error("JSON error: {0}")]
     Json(#[from] serde_json::Error),
+
+    #[error("Image compression error: {0}")]
+    ImageError(String),
 }
 
 impl Serialize for AppError {

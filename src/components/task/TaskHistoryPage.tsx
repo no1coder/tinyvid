@@ -1,14 +1,16 @@
 import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { Search, CheckCircle2, XCircle, AlertCircle, Clock, FolderOpen, FileVideo } from "lucide-react";
+import { Search, CheckCircle2, XCircle, AlertCircle, Clock, FolderOpen, FileVideo, Image as ImageIcon } from "lucide-react";
 import { useTaskStore } from "@/stores/taskStore";
-import { useCompression } from "@/hooks/useCompression";
+import { useImageStore } from "@/stores/imageStore";
+import { showInFolder } from "@/lib/tauri";
 import { formatFileSize } from "@/lib/format";
 import type { TaskStatusType } from "@/types";
 
 type FilterType = "all" | "completed" | "failed" | "cancelled";
 
 function StatusBadge({ status }: { status: TaskStatusType }) {
+  const { t } = useTranslation();
   switch (status) {
     case "completed":
       return (
@@ -19,25 +21,25 @@ function StatusBadge({ status }: { status: TaskStatusType }) {
     case "failed":
       return (
         <span className="badge-error inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium">
-          <XCircle size={10} /> Failed
+          <XCircle size={10} /> {t("status.failed")}
         </span>
       );
     case "cancelled":
       return (
         <span className="badge-cancelled inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium">
-          <AlertCircle size={10} /> Cancelled
+          <AlertCircle size={10} /> {t("status.cancelled")}
         </span>
       );
     case "running":
       return (
         <span className="inline-flex items-center gap-1 rounded-full bg-[#0a84ff1a] px-2 py-0.5 text-[10px] font-medium text-primary">
-          <Clock size={10} /> Running
+          <Clock size={10} /> {t("status.running")}
         </span>
       );
     case "pending":
       return (
         <span className="badge-ready inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium">
-          <Clock size={10} /> Pending
+          <Clock size={10} /> {t("status.pending")}
         </span>
       );
     default:
@@ -47,8 +49,9 @@ function StatusBadge({ status }: { status: TaskStatusType }) {
 
 export function TaskHistoryPage() {
   const { t } = useTranslation();
-  const { tasks } = useTaskStore();
-  const { showInFolder } = useCompression();
+  const videoTasks = useTaskStore((s) => s.tasks);
+  const imageTasks = useImageStore((s) => s.tasks);
+  const tasks = useMemo(() => [...videoTasks, ...imageTasks], [videoTasks, imageTasks]);
   const [filter, setFilter] = useState<FilterType>("all");
   const [search, setSearch] = useState("");
 
@@ -145,7 +148,11 @@ export function TaskHistoryPage() {
                 >
                   {/* File icon */}
                   <div className="icon-bg flex h-9 w-9 shrink-0 items-center justify-center rounded-lg">
-                    <FileVideo size={17} className="opacity-80" />
+                    {task.id.startsWith("img_") ? (
+                      <ImageIcon size={17} className="opacity-80" />
+                    ) : (
+                      <FileVideo size={17} className="opacity-80" />
+                    )}
                   </div>
 
                   {/* File info */}

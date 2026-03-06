@@ -35,6 +35,8 @@ const loadLanguage = (): Language => {
   return (localStorage.getItem("tinyvid-language") as Language) || "en";
 };
 
+let toastCounter = 0;
+
 export const useAppStore = create<AppState>((set) => ({
   page: "compressor",
   theme: loadTheme(),
@@ -62,7 +64,7 @@ export const useAppStore = create<AppState>((set) => ({
 
   toasts: [],
   addToast: (toast) => set((state) => ({
-    toasts: [...state.toasts, { ...toast, id: Date.now().toString() }],
+    toasts: [...state.toasts, { ...toast, id: `toast-${++toastCounter}` }],
   })),
   removeToast: (id) => set((state) => ({
     toasts: state.toasts.filter((t) => t.id !== id),
@@ -84,3 +86,15 @@ function applyTheme(theme: Theme) {
 
 // Apply theme on load
 applyTheme(loadTheme());
+
+// Listen for system theme changes when using "system" theme
+if (typeof window !== "undefined") {
+  window
+    .matchMedia("(prefers-color-scheme: light)")
+    .addEventListener("change", () => {
+      const currentTheme = useAppStore.getState().theme;
+      if (currentTheme === "system") {
+        applyTheme("system");
+      }
+    });
+}

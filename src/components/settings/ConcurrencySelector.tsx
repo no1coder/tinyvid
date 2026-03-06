@@ -16,7 +16,7 @@ export function ConcurrencySelector() {
   const { config, setMaxConcurrency } = useSettingsStore();
 
   return (
-    <div className="settings-row flex items-center justify-between rounded-b-[10px] px-4 py-3">
+    <div className="settings-row flex items-center justify-between px-4 py-3">
       <span className="text-[14px]">{t("settings.concurrency.title")}</span>
       <div className="flex gap-1">
         {OPTIONS.map(({ value, label }) => {
